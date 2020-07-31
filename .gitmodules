@@ -1,0 +1,3 @@
+[submodule "com.unity.simulation.core"]
+	path = com.unity.simulation.core
+	url = https://github.cds.internal.unity3d.com/unity/com.unity.simulation.core

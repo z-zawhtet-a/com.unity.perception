@@ -199,11 +199,10 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.simulation.core": {
-      "version": "0.0.10-preview.14",
+      "version": "file:C:/srchome/com.unity.perception/com.unity.simulation.core",
       "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
+      "source": "local",
+      "dependencies": {}
     },
     "com.unity.test-framework": {
       "version": "1.1.14",

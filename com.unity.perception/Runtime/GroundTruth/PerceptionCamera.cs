@@ -105,6 +105,9 @@ namespace UnityEngine.Perception.GroundTruth
             var ego = m_EgoMarker == null ? DatasetCapture.RegisterEgo("") : m_EgoMarker.EgoHandle;
             SensorHandle = DatasetCapture.RegisterSensor(ego, "camera", description, period, startTime);
 
+            AsyncRequest.maxJobSystemParallelism = 0; // Jobs are not chained to one another in any way
+            AsyncRequest.maxAsyncRequestFrameAge = 4; // Match the max age of Allocator.TempJob
+
             SetupInstanceSegmentation();
 
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
