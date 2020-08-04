@@ -43,6 +43,8 @@ namespace UnityEngine.Perception.GroundTruth
             {
                 var labelSetupSystem = World.DefaultGameObjectInjectionWorld?.GetExistingSystem<GroundTruthLabelSetupSystem>();
                 labelSetupSystem?.Activate(this);
+
+
                 m_IsActivated = true;
             }
         }
