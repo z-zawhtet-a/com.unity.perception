@@ -19,7 +19,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Newtonsoft.Json.dll"
+        "Newtonsoft.Json.dll",
+        "ZipUtility.dll"
     ],
     "autoReferenced": true,
     "defineConstraints": [],

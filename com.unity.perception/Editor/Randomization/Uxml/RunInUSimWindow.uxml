@@ -1,0 +1,5 @@
+﻿<UXML xmlns="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements">
+    <VisualElement>
+        <editor:ObjectField allow-scene-objects="false" bindingPath="m_MainScene"/>
+    </VisualElement>
+</UXML>
