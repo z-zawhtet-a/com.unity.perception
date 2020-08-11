@@ -110,6 +110,14 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         public abstract void Deserialize();
 
+        /// <summary>
+        /// Increments the scenario's currentIteration. Can be overriden to increment by values other than 1.
+        /// </summary>
+        public virtual void IncrementIteration()
+        {
+            currentIteration++;
+        }
+
         void OnEnable()
         {
             ActiveScenario = this;
@@ -149,7 +157,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 framesSinceInitialization++;
                 if (isIterationComplete)
                 {
-                    currentIteration++;
+                    IncrementIteration();
                     currentIterationFrame = 0;
                     OnIterationTeardown();
                 }

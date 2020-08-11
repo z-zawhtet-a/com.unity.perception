@@ -34,6 +34,7 @@ namespace RandomizationTests
         // TODO: update this function once the perception camera doesn't skip the first frame
         IEnumerator CreateNewScenario(int totalIterations, int framesPerIteration)
         {
+
             m_Scenario = m_TestObject.AddComponent<FixedLengthScenario>();
             m_Scenario.quitOnComplete = false;
             m_Scenario.constants.totalIterations = totalIterations;

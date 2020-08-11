@@ -10,7 +10,8 @@
         "Unity.Perception.Runtime",
         "PathCreatorEditor",
         "PathCreator",
-        "UnityEngine.UI"
+        "UnityEngine.UI",
+        "Unity.Simulation.Client.Editor"
     ],
     "includePlatforms": [
         "Editor"
