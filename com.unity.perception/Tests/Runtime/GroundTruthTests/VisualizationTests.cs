@@ -11,6 +11,9 @@ namespace GroundTruthTests
     public class VisualizationTests : GroundTruthTestBase
     {
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void VisualizedCamera_SetsUpCanvasAndSecondCamera()
         {
             var object1 = new GameObject();
@@ -27,6 +30,9 @@ namespace GroundTruthTests
             Assert.IsNotNull(GameObject.Find(nameof(VisualizedCamera_SetsUpCanvasAndSecondCamera) + "_VisualizationCanvas"));
         }
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void TwoCamerasVisualizing_CausesWarningAndDisablesVisualization()
         {
             var object1 = new GameObject();
@@ -50,6 +56,9 @@ namespace GroundTruthTests
             object2.SetActive(true);
         }
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator DestroyCamera_RemovesVisualization()
         {
             var object1 = new GameObject();
@@ -68,6 +77,9 @@ namespace GroundTruthTests
             Assert.IsNull(GameObject.Find(nameof(DestroyCamera_RemovesVisualization) + "_VisualizationCamera"));
         }
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void DestroyAndRecreateCamera_ProperlyVisualizes()
         {
             var object1 = new GameObject();

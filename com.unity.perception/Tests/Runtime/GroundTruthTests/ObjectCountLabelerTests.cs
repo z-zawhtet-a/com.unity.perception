@@ -23,12 +23,18 @@ namespace GroundTruthTests
     class ObjectCountLabelerTests : GroundTruthTestBase
     {
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void NullLabelingConfiguration_ProducesInvalidOperationException()
         {
             // ReSharper disable once ObjectCreationAsStatement
             Assert.Throws<ArgumentNullException>(() => new ObjectCountLabeler(null));
         }
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ProducesCorrectValuesWithChangingObjects()
         {
             var label = "label";

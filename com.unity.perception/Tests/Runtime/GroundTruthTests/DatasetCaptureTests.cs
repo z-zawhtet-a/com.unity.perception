@@ -21,6 +21,9 @@ namespace GroundTruthTests
     public class DatasetCaptureTests
     {
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void RegisterSensor_ReportsProperJson()
         {
             var egoDescription = @"the main car driving in simulation";
@@ -67,6 +70,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportCapture_ReportsProperJson()
         {
             var filename = "my/file.png";
@@ -165,6 +171,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator StartNewSequence_ProperlyIncrementsSequence()
         {
             var timingsExpected = new(int step, int timestamp, bool expectNewSequence)[]
@@ -235,6 +244,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportAnnotation_AddsProperJsonToCapture()
         {
             var filename = "my/file.png";
@@ -281,6 +293,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportAnnotationValues_ReportsProperJson()
         {
             var values = new[]
@@ -328,6 +343,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportAnnotationFile_WhenCaptureNotExpected_Throws()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -337,6 +355,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportAnnotationValues_WhenCaptureNotExpected_Throws()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -346,6 +367,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportAnnotationAsync_WhenCaptureNotExpected_Throws()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -355,6 +379,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ResetSimulation_WithUnreportedAnnotationAsync_LogsError()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -366,6 +393,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ResetSimulation_CallsSimulationEnding()
         {
             int timesCalled = 0;
@@ -376,6 +406,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void AnnotationAsyncIsValid_ReturnsProperValue()
         {
             LogAssert.ignoreFailingMessages = true; //we aren't worried about "Simulation ended with pending..."
@@ -391,6 +424,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void AnnotationAsyncReportFile_ReportsProperJson()
         {
             var expectedAnnotation = $@"      ""annotations"": [
@@ -424,6 +460,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void AnnotationAsyncReportValues_ReportsProperJson()
         {
             var values = new[]
@@ -474,6 +513,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void CreateAnnotation_MultipleTimes_WritesProperTypeOnce()
         {
             var annotationDefinitionGuid = new Guid(10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -503,6 +545,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void CreateAnnotation_MultipleTimesWithDifferentParameters_WritesProperTypes()
         {
             var annotationDefinitionGuid = new Guid(10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -538,6 +583,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportMetricValues_WhenCaptureNotExpected_Throws()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -547,6 +595,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ReportMetricAsync_WhenCaptureNotExpected_Throws()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -556,6 +607,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void ResetSimulation_WithUnreportedMetricAsync_LogsError()
         {
             var ego = DatasetCapture.RegisterEgo("");
@@ -567,6 +621,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void MetricAsyncIsValid_ReturnsProperValue()
         {
             LogAssert.ignoreFailingMessages = true; //we aren't worried about "Simulation ended with pending..."
@@ -589,6 +646,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator MetricReportValues_WithNoReportsInFrames_DoesNotIncrementStep()
         {
             var values = new[] { 1 };
@@ -609,6 +669,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SensorHandleReportMetric_BeforeReportCapture_ReportsProperJson()
         {
             var values = new[] { 1 };
@@ -630,6 +693,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void MetricAsyncReportValues_ReportsProperJson(
             [Values(MetricTarget.Global, MetricTarget.Capture, MetricTarget.Annotation)] MetricTarget metricTarget,
             [Values(true, false)] bool async,
@@ -734,6 +800,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void CreateMetric_MultipleTimesWithDifferentParameters_WritesProperTypes()
         {
             var metricDefinitionGuid = new Guid(10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -780,6 +849,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void CreateAnnotationOrMetric_WithSpecValues_WritesProperTypes(
             [Values(AdditionalInfoKind.Annotation, AdditionalInfoKind.Metric)] AdditionalInfoKind additionalInfoKind)
         {

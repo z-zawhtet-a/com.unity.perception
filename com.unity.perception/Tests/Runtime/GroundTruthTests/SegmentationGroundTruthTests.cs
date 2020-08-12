@@ -54,6 +54,9 @@ namespace GroundTruthTests
         // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
         // `yield return null;` to skip a frame.
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SegmentationPassTestsWithEnumeratorPasses(
             [Values(false, true)] bool useSkinnedMeshRenderer,
             [Values(SegmentationKind.Instance, SegmentationKind.Semantic)] SegmentationKind segmentationKind)
@@ -124,6 +127,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SemanticSegmentationPass_WithLabeledButNotMatchingObject_ProducesBlack()
         {
             int timesSegmentationImageReceived = 0;
@@ -144,6 +150,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SemanticSegmentationPass_WithEmptyFrame_ProducesBlack([Values(false, true)] bool showVisualizations)
         {
             int timesSegmentationImageReceived = 0;
@@ -177,6 +186,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SemanticSegmentationPass_WithTextureOverride_RendersToOverride([Values(true, false)] bool showVisualizations)
         {
             var expectedPixelValue = new Color32(0, 0, 255, 255);
@@ -211,6 +223,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator SegmentationPassProducesCorrectValuesEachFrame(
             [Values(SegmentationKind.Instance, SegmentationKind.Semantic)] SegmentationKind segmentationKind)
         {

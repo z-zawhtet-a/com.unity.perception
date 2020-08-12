@@ -20,6 +20,9 @@ namespace GroundTruthTests
     {
         [UnityTest]
         [UnityPlatform(RuntimePlatform.LinuxPlayer, RuntimePlatform.WindowsPlayer)]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator EnableBoundingBoxes_GeneratesCorrectDataset()
         {
             //set resolution to ensure we don't have rounding in rendering leading to bounding boxes to change height/width
@@ -55,6 +58,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator EnableSemanticSegmentation_GeneratesCorrectDataset()
         {
             SetupCamera(pc =>

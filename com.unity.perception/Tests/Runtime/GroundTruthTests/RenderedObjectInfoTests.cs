@@ -119,6 +119,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ProducesCorrectBoundingBoxes([ValueSource(nameof(ProducesCorrectBoundingBoxesTestCases))] ProducesCorrectObjectInfoData producesCorrectObjectInfoData)
         {
             var label = "label";

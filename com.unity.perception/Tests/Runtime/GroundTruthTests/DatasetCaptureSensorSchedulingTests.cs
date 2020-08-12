@@ -18,6 +18,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator FramesScheduledBySensorConfig()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -41,6 +44,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator FramesScheduled_WithTimeScale_ResultsInProperDeltaTime()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -67,6 +73,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ChangingTimeScale_CausesDebugError()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -79,6 +88,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ChangingTimeScale_DuringStartNewSequence_Succeeds()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -123,6 +135,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ResetSimulation_ResetsCaptureDeltaTime()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -134,6 +149,9 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public IEnumerator ShouldCaptureThisFrame_ReturnsTrueOnProperFrames()
         {
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -167,6 +185,9 @@ namespace GroundTruthTests
         }
 
         [Test]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void Enabled_StartsTrue()
         {
             var sensor1 = DatasetCapture.RegisterSensor(DatasetCapture.RegisterEgo(""), "cam", "1", 1, 1);

@@ -23,6 +23,9 @@ namespace GroundTruthTests
   ""NaN"",
   ""Infinity""
 ]")]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void Vector3ToJToken_ReturnsArrayFormat(float x, float y, float z, string jsonExpected)
         {
             var jsonActual = DatasetJsonUtility.ToJToken(new Vector3(x, y, z));
@@ -48,6 +51,9 @@ namespace GroundTruthTests
   ""Infinity"",
   ""NaN""
 ]")]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void QuaternionToJToken_ReturnsArrayFormat(float x, float y, float z, float w, string jsonExpected)
         {
             var jsonActual = DatasetJsonUtility.ToJToken(new Quaternion(x, y, z, w)).ToString();
@@ -78,11 +84,15 @@ namespace GroundTruthTests
             Assert.AreEqual(TestHelper.NormalizeJson(jsonExpected), TestHelper.NormalizeJson(jsonActual));
         }
 
+        [Test]
         [TestCase(1, "1")]
         [TestCase(1u, "1")]
         [TestCase(1.0, "1")]
         [TestCase(1.0f, "1")]
         [TestCase("string", "\"string\"")]
+#if SIMULATION_TOOLS_PRESENT
+        [Unity.Simulation.Tools.CloudTest]
+#endif
         public void Primitive_ReturnsValue(object o, string jsonExpected)
         {
             var jsonActual = DatasetJsonUtility.ToJToken(o).ToString();
