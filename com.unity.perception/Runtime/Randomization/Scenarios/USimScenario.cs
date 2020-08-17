@@ -16,11 +16,6 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             currentIteration += constants.instanceCount;
         }
 
-        public override void OnFrameStart()
-        {
-            Debug.Log($"{currentIteration}: {currentIterationFrame}");
-        }
-
         public override void Deserialize()
         {
             if (!string.IsNullOrEmpty(Unity.Simulation.Configuration.Instance.SimulationConfig.app_param_uri))
@@ -34,10 +29,10 @@ namespace UnityEngine.Perception.Randomization.Scenarios
     }
 
     [Serializable]
-    public struct USimConstants
+    public class USimConstants
     {
-        public int totalIterations;
-        public int instanceCount;
+        public int totalIterations = 100;
+        public int instanceCount = 1;
         public int instanceIndex;
     }
 }

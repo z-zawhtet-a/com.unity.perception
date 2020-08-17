@@ -15,13 +15,21 @@ namespace UnityEngine.Perception.Randomization.Editor
 {
     public class RunInUSimWindow : EditorWindow
     {
-        SceneAsset m_MainScene;
-        USimScenario m_Scenario;
-        SysParamDefinition m_SysParam;
-        string m_RunName;
         string m_BuildZipPath;
-        int m_TotalIterations;
-        int m_InstanceCount;
+        SysParamDefinition m_SysParam;
+
+        TextField m_RunNameField;
+        TextField m_RunExecutionIdField;
+        IntegerField m_TotalIterationsField;
+        IntegerField m_InstanceCountField;
+        ObjectField m_MainSceneField;
+        ObjectField m_ScenarioField;
+
+        TextElement m_NumNotRun;
+        TextElement m_NumFailures;
+        TextElement m_NumInProgress;
+        TextElement m_NumSuccess;
+        TextElement m_RunState;
 
         [MenuItem("Window/Run in USim")]
         public static void ShowWindow()
@@ -75,26 +83,32 @@ namespace UnityEngine.Perception.Randomization.Editor
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
                 $"{StaticData.uxmlDir}/RunInUSimWindow.uxml").CloneTree(root);
 
-            var runNameField = root.Q<TextField>("run-name");
-            runNameField.RegisterCallback<ChangeEvent<string>>(evt => { m_RunName = evt.newValue; });
-            SetViewDataKey(runNameField);
+            m_RunNameField = root.Q<TextField>("run-name");
+            SetViewDataKey(m_RunNameField);
 
-            var totalIterationsField = root.Q<IntegerField>("total-iterations");
-            totalIterationsField.RegisterCallback<ChangeEvent<int>>(evt => { m_TotalIterations = evt.newValue; });
-            SetViewDataKey(totalIterationsField);
+            m_TotalIterationsField = root.Q<IntegerField>("total-iterations");
+            SetViewDataKey(m_TotalIterationsField);
 
-            var instanceCountField = root.Q<IntegerField>("instance-count");
-            instanceCountField.RegisterCallback<ChangeEvent<int>>(evt => { m_InstanceCount = evt.newValue; });
-            instanceCountField.viewDataKey = "RunInUSim_instanceCount";
-            SetViewDataKey(instanceCountField);
+            m_InstanceCountField = root.Q<IntegerField>("instance-count");
+            SetViewDataKey(m_InstanceCountField);
 
-            var mainSceneField = root.Q<ObjectField>("main-scene");
-            mainSceneField.objectType = typeof(SceneAsset);
-            mainSceneField.RegisterCallback<ChangeEvent<Object>>(evt => { m_MainScene = (SceneAsset)evt.newValue; });
+            m_MainSceneField = root.Q<ObjectField>("main-scene");
+            m_MainSceneField.objectType = typeof(SceneAsset);
 
-            var scenarioField = root.Q<ObjectField>("scenario");
-            scenarioField.objectType = typeof(ScenarioBase);
-            scenarioField.RegisterCallback<ChangeEvent<Object>>(evt => { m_Scenario = (USimScenario)evt.newValue; });
+            m_ScenarioField = root.Q<ObjectField>("scenario");
+            m_ScenarioField.objectType = typeof(ScenarioBase);
+
+            m_RunExecutionIdField = root.Q<TextField>("run-execution-id");
+            SetViewDataKey(m_RunExecutionIdField);
+
+            m_NumNotRun = root.Q<TextElement>("num-not-run");
+            m_NumFailures = root.Q<TextElement>("num-failures");
+            m_NumInProgress = root.Q<TextElement>("num-in-progress");
+            m_NumSuccess = root.Q<TextElement>("num-success");
+            m_RunState = root.Q<TextElement>("run-state");
+
+            var summarizeExecutionButton = root.Q<Button>("summarize-execution");
+            summarizeExecutionButton.clicked += SummarizeExecution;
 
             var sysParamDefinitions = API.GetSysParams();
             var sysParamMenu = root.Q<ToolbarMenu>("sys-param");
@@ -107,6 +121,16 @@ namespace UnityEngine.Perception.Randomization.Editor
             runButton.clicked += RunInUSim;
         }
 
+        void SummarizeExecution()
+        {
+            var summary = API.Summarize(m_RunExecutionIdField.value);
+            m_NumNotRun.text = summary.num_not_run.ToString();
+            m_NumFailures.text = summary.num_failures.ToString();
+            m_NumInProgress.text = summary.num_in_progress.ToString();
+            m_NumSuccess.text = summary.num_success.ToString();
+            m_RunState.text = summary.state.ToString();
+        }
+
         void RunInUSim()
         {
             ValidateSettings();
@@ -116,11 +140,11 @@ namespace UnityEngine.Perception.Randomization.Editor
 
         void ValidateSettings()
         {
-            if (string.IsNullOrEmpty(m_RunName))
+            if (string.IsNullOrEmpty(m_RunNameField.value))
                 throw new RuntimeException("Invalid run name");
-            if (m_Scenario == null)
+            if (m_ScenarioField.value == null)
                 throw new RuntimeException("Null scenario");
-            if (m_MainScene == null)
+            if (m_MainSceneField.value == null)
                 throw new RankException("Null main scene");
         }
 
@@ -128,17 +152,17 @@ namespace UnityEngine.Perception.Randomization.Editor
         {
             // Create build directory
             var pathToProjectBuild = Application.dataPath + "/../" + "Build/";
-            if (!Directory.Exists(pathToProjectBuild + m_RunName))
-                Directory.CreateDirectory(pathToProjectBuild + m_RunName);
+            if (!Directory.Exists(pathToProjectBuild + m_RunNameField.value))
+                Directory.CreateDirectory(pathToProjectBuild + m_RunNameField.value);
 
-            pathToProjectBuild = pathToProjectBuild + m_RunName + "/";
+            pathToProjectBuild = pathToProjectBuild + m_RunNameField.value + "/";
 
             // Create Linux build
             Debug.Log("Creating Linux build...");
             var buildPlayerOptions = new BuildPlayerOptions
             {
-                scenes = new[] { AssetDatabase.GetAssetPath(m_MainScene) },
-                locationPathName = Path.Combine(pathToProjectBuild, m_RunName + ".x86_64"),
+                scenes = new[] { AssetDatabase.GetAssetPath(m_MainSceneField.value) },
+                locationPathName = Path.Combine(pathToProjectBuild, m_RunNameField.value + ".x86_64"),
                 target = BuildTarget.StandaloneLinux64
             };
             var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
@@ -149,8 +173,8 @@ namespace UnityEngine.Perception.Randomization.Editor
 
             // Zip the build
             Debug.Log("Starting to zip...");
-            var buildFolder = Application.dataPath + "/../" + "Build/" + m_RunName;
-            Zip.DirectoryContents(buildFolder, m_RunName);
+            var buildFolder = Application.dataPath + "/../" + "Build/" + m_RunNameField.value;
+            Zip.DirectoryContents(buildFolder, m_RunNameField.value);
             m_BuildZipPath = buildFolder + ".zip";
             Debug.Log("Created build zip");
         }
@@ -158,15 +182,15 @@ namespace UnityEngine.Perception.Randomization.Editor
         List<AppParam> GenerateAppParamIds(CancellationToken token)
         {
             var appParamIds = new List<AppParam>();
-            for (var i = 0; i < m_InstanceCount; i++)
+            for (var i = 0; i < m_InstanceCountField.value; i++)
             {
                 if (token.IsCancellationRequested)
                     return null;
-                var appParamName = $"{m_RunName}_{i}";
+                var appParamName = $"{m_RunNameField.value}_{i}";
                 var appParamId = API.UploadAppParam(appParamName, new USimConstants
                 {
-                    totalIterations = m_TotalIterations,
-                    instanceCount = m_InstanceCount,
+                    totalIterations = m_TotalIterationsField.value,
+                    instanceCount = m_InstanceCountField.value,
                     instanceIndex = i
                 });
                 appParamIds.Add(new AppParam()
@@ -186,7 +210,7 @@ namespace UnityEngine.Perception.Randomization.Editor
 
             Debug.Log("Uploading build...");
             var buildId = await API.UploadBuildAsync(
-                m_RunName,
+                m_RunNameField.value,
                 m_BuildZipPath,
                 cancellationTokenSource: cancellationTokenSource);
 
@@ -200,7 +224,7 @@ namespace UnityEngine.Perception.Randomization.Editor
             var runDefinitionId = API.UploadRunDefinition(new RunDefinition
             {
                 app_params = appParams.ToArray(),
-                name = m_RunName,
+                name = m_RunNameField.value,
                 sys_param_id = m_SysParam.id,
                 build_id = buildId
             });
@@ -208,6 +232,7 @@ namespace UnityEngine.Perception.Randomization.Editor
 
             var run = Run.CreateFromDefinitionId(runDefinitionId);
             run.Execute();
+            m_RunExecutionIdField.value = run.executionId;
             cancellationTokenSource.Dispose();
             Debug.Log("Executed run");
         }

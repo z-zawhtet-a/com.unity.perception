@@ -38,7 +38,7 @@ namespace RandomizationTests
             m_Scenario = m_TestObject.AddComponent<FixedLengthScenario>();
             m_Scenario.quitOnComplete = false;
             m_Scenario.constants.totalIterations = totalIterations;
-            m_Scenario.constants.framesPerIteration = framesPerIteration;
+            m_Scenario.framesPerIteration = framesPerIteration;
             yield return null; // Skip Start() frame
             yield return null; // Skip first Update() frame
         }
@@ -49,18 +49,18 @@ namespace RandomizationTests
             yield return CreateNewScenario(10, 10);
             m_Scenario.serializedConstantsFileName = "perception_serialization_test";
 
-            var constants = new FixedLengthScenario.Constants
+            var constants = new USimConstants
             {
-                framesPerIteration = 2,
-                startingIteration = 2,
-                totalIterations = 2
+                totalIterations = 2,
+                instanceCount = 2,
+                instanceIndex = 1
             };
 
-            var changedConstants = new FixedLengthScenario.Constants
+            var changedConstants = new USimConstants
             {
-                framesPerIteration = 0,
-                startingIteration = 0,
-                totalIterations = 0
+                totalIterations = 0,
+                instanceCount = 1,
+                instanceIndex = 0
             };
 
             // Serialize some values
@@ -69,12 +69,15 @@ namespace RandomizationTests
 
             // Change the values
             m_Scenario.constants = changedConstants;
-            m_Scenario.Deserialize();
+            Assert.AreNotEqual(m_Scenario.constants.totalIterations, constants.totalIterations);
+            Assert.AreNotEqual(m_Scenario.constants.instanceCount, constants.instanceCount);
+            Assert.AreNotEqual(m_Scenario.constants.instanceIndex, constants.instanceIndex);
 
-            // Check if the values reverted correctly
-            Assert.AreEqual(m_Scenario.constants.framesPerIteration, constants.framesPerIteration);
-            Assert.AreEqual(m_Scenario.constants.startingIteration, constants.startingIteration);
+            // Check if the values deserialize correctly
+            m_Scenario.Deserialize();
             Assert.AreEqual(m_Scenario.constants.totalIterations, constants.totalIterations);
+            Assert.AreEqual(m_Scenario.constants.instanceCount, constants.instanceCount);
+            Assert.AreEqual(m_Scenario.constants.instanceIndex, constants.instanceIndex);
 
             // Clean up serialized constants
             File.Delete(m_Scenario.serializedConstantsFilePath);
