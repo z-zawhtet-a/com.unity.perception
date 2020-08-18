@@ -1,41 +1,48 @@
 ﻿<UXML xmlns="UnityEngine.UIElements" xmlns:editor="UnityEditor.UIElements" xmlns:randEditor="UnityEngine.Perception.Randomization.Editor">
     <VisualElement>
-        <TextField name="run-name" label="Run Name"/>
-        <randEditor:PositiveIntegerField name="total-iterations" label="Total Iterations"/>
-        <randEditor:PositiveIntegerField name="instance-count" label="Instance Count" max-value="10000"/>
-        <editor:ObjectField name="main-scene" label="Main Scene" allow-scene-objects="false"/>
-        <editor:ObjectField name="scenario" label="Scenario"/>
-        <VisualElement class="unity-base-field">
-            <Label text="USim worker config" class="unity-base-field__label"/>
-            <editor:ToolbarMenu name="sys-param" class="unity-base-field__input" style="border-width: 1px;"/>
-        </VisualElement>
-        <VisualElement style="align-items: center;">
-            <Button name="run-button" text="Build and Run" style="margin-top: 20px; padding: 2 20; font-size: 13px;"/>
+        <Style src="../Uss/RunInUSimStyles.uss"/>
+        <VisualElement class="dark-viewport" style="margin-bottom: 20px;">
+            <VisualElement style="">
+                <TextField name="run-name" label="Run Name"/>
+                <randEditor:PositiveIntegerField name="total-iterations" label="Total Iterations"/>
+                <randEditor:PositiveIntegerField name="instance-count" label="Instance Count" max-value="10000"/>
+                <editor:ObjectField name="main-scene" label="Main Scene" allow-scene-objects="false"/>
+                <editor:ObjectField name="scenario" label="Scenario"/>
+                <VisualElement class="unity-base-field">
+                    <Label text="USim worker config" class="unity-base-field__label"/>
+                    <editor:ToolbarMenu name="sys-param" class="unity-base-field__input" style="border-width: 1px;"/>
+                </VisualElement>
+                <VisualElement style="align-items: center;">
+                    <Button name="run-button" text="Build and Run" style="margin: 10px; padding: 2 20; font-size: 13px;"/>
+                </VisualElement>
+            </VisualElement>
         </VisualElement>
 
-        <TextField name="run-execution-id" label="Run Execution ID" style="margin-top: 40px;"/>
-        <VisualElement class="unity-base-field">
-            <Label text="Not Run" class="unity-base-field__label"/>
-            <TextElement name="num-not-run" text="0"/>
-        </VisualElement>
-        <VisualElement class="unity-base-field">
-            <Label text="Failed" class="unity-base-field__label"/>
-            <TextElement name="num-failures" text="0"/>
-        </VisualElement>
-        <VisualElement class="unity-base-field">
-            <Label text="In Progress" class="unity-base-field__label"/>
-            <TextElement name="num-in-progress" text="0"/>
-        </VisualElement>
-        <VisualElement class="unity-base-field">
-            <Label text="Succeeded" class="unity-base-field__label"/>
-            <TextElement name="num-success" text="0"/>
-        </VisualElement>
-        <VisualElement class="unity-base-field">
-            <Label text="State" class="unity-base-field__label"/>
-            <TextElement name="run-state" text="default"/>
-        </VisualElement>
-        <VisualElement style="align-items: center;">
-            <Button name="summarize-execution" text="Summarize Execution" style="margin-top: 20px; padding: 2 20; font-size: 13px;"/>
+        <VisualElement name="run-status-container" class="dark-viewport">
+            <TextField name="run-execution-id" label="Run Execution ID"/>
+            <VisualElement class="unity-base-field">
+                <Label text="Not Run" class="unity-base-field__label"/>
+                <TextElement name="num-not-run"/>
+            </VisualElement>
+            <VisualElement class="unity-base-field">
+                <Label text="Failed" class="unity-base-field__label"/>
+                <TextElement name="num-failures"/>
+            </VisualElement>
+            <VisualElement class="unity-base-field">
+                <Label text="In Progress" class="unity-base-field__label"/>
+                <TextElement name="num-in-progress"/>
+            </VisualElement>
+            <VisualElement class="unity-base-field">
+                <Label text="Succeeded" class="unity-base-field__label"/>
+                <TextElement name="num-success"/>
+            </VisualElement>
+            <VisualElement class="unity-base-field">
+                <Label text="State" class="unity-base-field__label"/>
+                <TextElement name="run-state"/>
+            </VisualElement>
+            <VisualElement style="align-items: center;">
+                <Button name="download-manifest" text="Download Manifest" style="margin: 10px; padding: 2 20; font-size: 13px;"/>
+            </VisualElement>
         </VisualElement>
     </VisualElement>
 </UXML>
