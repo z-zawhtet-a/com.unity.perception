@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Samplers;
 
@@ -44,9 +45,9 @@ namespace UnityEngine.Perception.Randomization.Parameters
         public abstract Type sampleType { get; }
 
         /// <summary>
-        /// An array containing a reference to each sampler field in this parameter
+        /// Returns an IEnumerable that iterates over each sampler field in this parameter
         /// </summary>
-        public abstract ISampler[] samplers { get; }
+        public abstract IEnumerable<ISampler> samplers { get; }
 
         /// <summary>
         /// Constructs a new parameter

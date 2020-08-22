@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -33,9 +34,18 @@ namespace UnityEngine.Perception.Randomization.Parameters
         [SerializeReference] public ISampler alpha = new ConstantSampler(1f);
 
         /// <summary>
-        /// Returns the samplers employed by this parameter
+        /// Returns an IEnumerable that iterates over each sampler field in this parameter
         /// </summary>
-        public override ISampler[] samplers => new []{ hue, saturation, value, alpha };
+        public override IEnumerable<ISampler> samplers
+        {
+            get
+            {
+                yield return hue;
+                yield return saturation;
+                yield return value;
+                yield return alpha;
+            }
+        }
 
         /// <summary>
         /// Generates a color sample
