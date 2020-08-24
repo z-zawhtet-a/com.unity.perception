@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine.Perception.Randomization.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.UIElements;
 
@@ -28,7 +28,7 @@ namespace UnityEngine.Perception.Randomization.Editor
                 foreach (var child in m_ParameterContainer.Children())
                 {
                     var paramIndex = m_ParameterContainer.IndexOf(child);
-                    var param = config.parameters[paramIndex];
+                    var param = config.configuredParameters[paramIndex];
                     ((ConfiguredParameterElement)child).filtered = param.name.ToLower().Contains(lowerFilter);
                 }
             }
@@ -85,7 +85,7 @@ namespace UnityEngine.Perception.Randomization.Editor
         {
             var paramIndex = m_ParameterContainer.IndexOf(template);
             m_ParameterContainer.RemoveAt(paramIndex);
-            config.parameters.RemoveAt(paramIndex);
+            config.configuredParameters.RemoveAt(paramIndex);
             serializedObject.Update();
             RefreshParameterElements();
         }
@@ -99,13 +99,13 @@ namespace UnityEngine.Perception.Randomization.Editor
                 nextIndex--;
 
             var parameterElement = m_ParameterContainer[currentIndex];
-            var parameter = config.parameters[currentIndex];
+            var parameter = config.configuredParameters[currentIndex];
 
             parameterElement.RemoveFromHierarchy();
-            config.parameters.RemoveAt(currentIndex);
+            config.configuredParameters.RemoveAt(currentIndex);
 
             m_ParameterContainer.Insert(nextIndex, parameterElement);
-            config.parameters.Insert(nextIndex, parameter);
+            config.configuredParameters.Insert(nextIndex, parameter);
 
             serializedObject.Update();
 

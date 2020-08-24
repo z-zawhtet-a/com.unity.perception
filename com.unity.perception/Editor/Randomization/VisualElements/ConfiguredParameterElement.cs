@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine.Perception.Randomization.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.UIElements;
 
@@ -90,7 +90,7 @@ namespace UnityEngine.Perception.Randomization.Editor
             ToggleTargetContainer();
 
             var frequencyField = this.Q<EnumField>("application-frequency");
-            frequencyField.Init(ParameterApplicationFrequency.OnIterationSetup);
+            frequencyField.Init(ParameterApplicationFrequency.OnIterationStart);
             var applicationFrequency = m_Target.FindPropertyRelative("applicationFrequency");
             frequencyField.BindProperty(applicationFrequency);
 

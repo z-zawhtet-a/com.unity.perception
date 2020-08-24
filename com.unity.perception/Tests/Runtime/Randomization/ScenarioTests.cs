@@ -4,7 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
-using UnityEngine.Perception.Randomization.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.Perception.Randomization.Samplers;
 using UnityEngine.Perception.Randomization.Scenarios;
@@ -146,7 +146,7 @@ namespace RandomizationTests
             var prevPosition = new Vector3();
             transform.position = prevPosition;
             configuredParameter.target.AssignNewTarget(
-                m_TestObject, transform, "position", ParameterApplicationFrequency.OnIterationSetup);
+                m_TestObject, transform, "position", ParameterApplicationFrequency.OnIterationStart);
 
 
             yield return CreateNewScenario(2, 2);

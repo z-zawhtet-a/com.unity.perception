@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.Configuration
+namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
 {
     /// <summary>
     /// Used to apply sampled parameter values to a particular GameObject, Component, and property.
@@ -14,7 +14,7 @@ namespace UnityEngine.Perception.Randomization.Configuration
         [SerializeField] internal Component component;
         [SerializeField] internal string propertyName = string.Empty;
         [SerializeField] internal FieldOrProperty fieldOrProperty = FieldOrProperty.Field;
-        [SerializeField] internal ParameterApplicationFrequency applicationFrequency = ParameterApplicationFrequency.OnIterationSetup;
+        [SerializeField] internal ParameterApplicationFrequency applicationFrequency = ParameterApplicationFrequency.OnIterationStart;
 
         /// <summary>
         /// Assigns a new target
@@ -84,7 +84,7 @@ namespace UnityEngine.Perception.Randomization.Configuration
         /// <summary>
         /// Applies a parameter once every iteration
         /// </summary>
-        OnIterationSetup,
+        OnIterationStart,
 
         /// <summary>
         /// Applies a parameter once every frame

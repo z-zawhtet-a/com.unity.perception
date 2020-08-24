@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.Configuration
+namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
 {
     [Serializable]
     class ConfiguredParameter
@@ -17,6 +17,12 @@ namespace UnityEngine.Perception.Randomization.Configuration
             if (!hasTarget)
                 return;
             target.ApplyValueToTarget(parameter.GenericSample());
+        }
+
+        public void Validate()
+        {
+            target.Validate();
+            parameter.Validate();
         }
     }
 }

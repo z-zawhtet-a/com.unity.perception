@@ -12,13 +12,13 @@ namespace Randomization.ParameterBehaviours
 
         public abstract IEnumerable<Parameter> parameters { get; }
 
-        void Awake()
+        protected virtual void OnEnable()
         {
             activeBehaviours.Add(this);
             OnInitialize();
         }
 
-        void OnDestroy()
+        protected virtual void OnDisable()
         {
             activeBehaviours.Remove(this);
         }

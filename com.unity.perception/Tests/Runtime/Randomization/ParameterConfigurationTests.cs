@@ -1,9 +1,7 @@
-﻿using System.Collections;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.Perception.Randomization.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
 using UnityEngine.Perception.Randomization.Parameters;
-using UnityEngine.TestTools;
 
 namespace RandomizationTests
 {
@@ -30,7 +28,7 @@ namespace RandomizationTests
             var config = m_TestObject.AddComponent<ParameterConfiguration>();
             config.AddParameter<FloatParameter>("SameName");
             config.AddParameter<BooleanParameter>("SameName");
-            Assert.Throws<ParameterConfigurationException>(() => config.ValidateParameters());
+            Assert.Throws<ParameterConfigurationException>(() => config.Validate());
         }
 
         [Test]
