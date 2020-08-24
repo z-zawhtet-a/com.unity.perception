@@ -111,11 +111,12 @@ namespace RandomizationTests
         public IEnumerator AppliesParametersEveryFrame()
         {
             var config = m_TestObject.AddComponent<ParameterConfiguration>();
-            var parameter = config.AddParameter<Vector3Parameter>();
+            var configuredParameter = config.AddParameter<Vector3Parameter>("testParam");
+            var parameter = (Vector3Parameter)configuredParameter.parameter;
             parameter.x = new UniformSampler(1, 2);
             parameter.y = new UniformSampler(1, 2);
             parameter.z = new UniformSampler(1, 2);
-            parameter.target.AssignNewTarget(
+            configuredParameter.target.AssignNewTarget(
                 m_TestObject, m_TestObject.transform, "position", ParameterApplicationFrequency.EveryFrame);
 
             var initialPosition = Vector3.zero;
@@ -135,7 +136,8 @@ namespace RandomizationTests
         public IEnumerator AppliesParametersEveryIteration()
         {
             var config = m_TestObject.AddComponent<ParameterConfiguration>();
-            var parameter = config.AddParameter<Vector3Parameter>();
+            var configuredParameter = config.AddParameter<Vector3Parameter>("testParam");
+            var parameter = (Vector3Parameter)configuredParameter.parameter;
             parameter.x = new UniformSampler(1, 2);
             parameter.y = new UniformSampler(1, 2);
             parameter.z = new UniformSampler(1, 2);
@@ -143,7 +145,7 @@ namespace RandomizationTests
             var transform = m_TestObject.transform;
             var prevPosition = new Vector3();
             transform.position = prevPosition;
-            parameter.target.AssignNewTarget(
+            configuredParameter.target.AssignNewTarget(
                 m_TestObject, transform, "position", ParameterApplicationFrequency.OnIterationSetup);
 
 

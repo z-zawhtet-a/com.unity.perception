@@ -32,14 +32,17 @@ namespace UnityEngine.Perception.Randomization.Parameters
         /// <returns>A NativeArray containing generated samples</returns>
         public abstract NativeArray<T> Samples(int sampleCount, out JobHandle jobHandle);
 
-        internal sealed override void ApplyToTarget(int seedOffset)
+        /// <summary>
+        /// Generates a generic sample
+        /// </summary>
+        /// <returns>The generated sample</returns>
+        public override object GenericSample()
         {
-            if (!hasTarget)
-                return;
-            target.ApplyValueToTarget(Sample());
+            return Sample();
         }
 
-        internal override void Validate()
+
+        public override void Validate()
         {
             base.Validate();
             foreach (var sampler in samplers)

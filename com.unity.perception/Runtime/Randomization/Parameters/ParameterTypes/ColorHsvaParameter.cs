@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine.Perception.Randomization.Samplers;
 
 namespace UnityEngine.Perception.Randomization.Parameters
@@ -48,9 +49,9 @@ namespace UnityEngine.Perception.Randomization.Parameters
         }
 
         /// <summary>
-        /// Generates a color sample
+        /// Generates an RGBA color sample
         /// </summary>
-        /// <returns>The generated sample</returns>
+        /// <returns>The generated RGBA sample</returns>
         public override Color Sample()
         {
             var color = Color.HSVToRGB(hue.Sample(), saturation.Sample(), value.Sample());
@@ -59,7 +60,16 @@ namespace UnityEngine.Perception.Randomization.Parameters
         }
 
         /// <summary>
-        /// Schedules a job to generate an array of samples
+        /// Generates an HSVA color sample
+        /// </summary>
+        /// <returns>The generated HSVA sample</returns>
+        public ColorHsva SampleHsva()
+        {
+            return new ColorHsva(hue.Sample(), saturation.Sample(), value.Sample(), alpha.Sample());
+        }
+
+        /// <summary>
+        /// Schedules a job to generate an array of RGBA color samples
         /// </summary>
         /// <param name="sampleCount">The number of samples to generate</param>
         /// <param name="jobHandle">The handle of the scheduled job</param>
@@ -115,6 +125,99 @@ namespace UnityEngine.Perception.Randomization.Parameters
                 for (var i = 0; i < samples.Length; i++)
                     samples[i] = CreateColorHsva(hueRng[i], satRng[i], valRng[i], alphaRng[i]);
             }
+        }
+
+        /// <summary>
+        /// Schedules a job to generate an array of HSVA color samples
+        /// </summary>
+        /// <param name="sampleCount">The number of samples to generate</param>
+        /// <param name="jobHandle">The handle of the scheduled job</param>
+        /// <returns>A NativeArray of samples</returns>
+        public NativeArray<ColorHsva> SamplesHsva(int sampleCount, out JobHandle jobHandle)
+        {
+            var samples = new NativeArray<ColorHsva>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            var hueRng = hue.Samples(sampleCount, out var hueHandle);
+            var satRng = saturation.Samples(sampleCount, out var satHandle);
+            var valRng = value.Samples(sampleCount, out var valHandle);
+            var alphaRng = alpha.Samples(sampleCount, out var alphaHandle);
+
+            var handles = new NativeArray<JobHandle>(4, Allocator.TempJob)
+            {
+                [0] = hueHandle,
+                [1] = satHandle,
+                [2] = valHandle,
+                [3] = alphaHandle
+            };
+            var combinedJobHandles = JobHandle.CombineDependencies(handles);
+
+            jobHandle = new SamplesHsvaJob
+            {
+                hueRng = hueRng,
+                satRng = satRng,
+                valRng = valRng,
+                alphaRng = alphaRng,
+                samples = samples
+            }.Schedule(combinedJobHandles);
+            handles.Dispose(jobHandle);
+
+            return samples;
+        }
+
+        [BurstCompile]
+        struct SamplesHsvaJob : IJob
+        {
+            [DeallocateOnJobCompletion] public NativeArray<float> hueRng;
+            [DeallocateOnJobCompletion] public NativeArray<float> satRng;
+            [DeallocateOnJobCompletion] public NativeArray<float> valRng;
+            [DeallocateOnJobCompletion] public NativeArray<float> alphaRng;
+            public NativeArray<ColorHsva> samples;
+
+            public void Execute()
+            {
+                for (var i = 0; i < samples.Length; i++)
+                    samples[i] = new ColorHsva(hueRng[i], satRng[i], valRng[i], alphaRng[i]);
+            }
+        }
+    }
+
+    [Serializable]
+    public struct ColorHsva
+    {
+        public float h;
+        public float s;
+        public float v;
+        public float a;
+
+        public ColorHsva(float h, float s, float v, float a)
+        {
+            this.h = h;
+            this.s = s;
+            this.v = v;
+            this.a = a;
+        }
+
+        public static implicit operator float4(ColorHsva c) => new float4(c.h, c.s, c.v, c.a);
+        public static implicit operator ColorHsva(float4 f) => new ColorHsva(f.x, f.y, f.z, f.w);
+
+        public static implicit operator Vector4(ColorHsva c) => new float4(c.h, c.s, c.v, c.a);
+        public static implicit operator ColorHsva(Vector4 f) => new ColorHsva(f.x, f.y, f.z, f.w);
+
+        public static explicit operator Color(ColorHsva c)
+        {
+            var color = Color.HSVToRGB(c.h, c.s, c.v);
+            color.a = c.a;
+            return color;
+        }
+
+        public static explicit operator ColorHsva(Color c)
+        {
+            Color.RGBToHSV(c, out var h, out var s, out var v);
+            return new ColorHsva(h, s, v, c.a);
+        }
+
+        public override string ToString()
+        {
+            return $"ColorHsva({h}, {s}, {v}, {a})";
         }
     }
 }

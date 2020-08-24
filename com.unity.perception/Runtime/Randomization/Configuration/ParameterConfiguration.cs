@@ -13,7 +13,7 @@ namespace UnityEngine.Perception.Randomization.Configuration
     public class ParameterConfiguration : MonoBehaviour
     {
         internal static HashSet<ParameterConfiguration> configurations = new HashSet<ParameterConfiguration>();
-        [SerializeReference] internal List<Parameter> parameters = new List<Parameter>();
+        [SerializeReference] internal List<ConfiguredParameter> parameters = new List<ConfiguredParameter>();
 
         /// <summary>
         /// Find a parameter in this configuration by name
@@ -24,10 +24,10 @@ namespace UnityEngine.Perception.Randomization.Configuration
         /// <exception cref="ParameterConfigurationException"></exception>
         public Parameter GetParameter(string parameterName, Type parameterType)
         {
-            foreach (var parameter in parameters)
+            foreach (var configParameter in parameters)
             {
-                if (parameter.name == parameterName && parameter.GetType() ==  parameterType)
-                    return parameter;
+                if (configParameter.name == parameterName && configParameter.parameter.GetType() ==  parameterType)
+                    return configParameter.parameter;
             }
             return null;
         }
@@ -48,49 +48,47 @@ namespace UnityEngine.Perception.Randomization.Configuration
             return null;
         }
 
-        string PlaceholderParameterName() => $"Parameter{parameters.Count}";
-
-        internal T AddParameter<T>() where T : Parameter, new()
+        internal ConfiguredParameter AddParameter<T>(string parameterName) where T : Parameter, new()
         {
             var parameter = new T();
-            parameter.name = PlaceholderParameterName();
-            parameters.Add(parameter);
-            return parameter;
+            var configParameter = new ConfiguredParameter { name = parameterName, parameter = parameter };
+            parameters.Add(configParameter);
+            return configParameter;
         }
 
-        internal Parameter AddParameter(Type parameterType)
+        internal ConfiguredParameter AddParameter(string parameterName, Type parameterType)
         {
             if (!parameterType.IsSubclassOf(typeof(Parameter)))
                 throw new ParameterConfigurationException($"Cannot add non-parameter types ({parameterType})");
             var parameter = (Parameter)Activator.CreateInstance(parameterType);
-            parameter.name = PlaceholderParameterName();
-            parameters.Add(parameter);
-            return parameter;
+            var configParameter = new ConfiguredParameter { name = parameterName, parameter = parameter };
+            parameters.Add(configParameter);
+            return configParameter;
         }
 
-        internal void ApplyParameters(int seedOffset, ParameterApplicationFrequency frequency)
+        internal void ApplyParameters(ParameterApplicationFrequency frequency)
         {
-            foreach (var parameter in parameters)
-                if (parameter.target.applicationFrequency == frequency)
-                    parameter.ApplyToTarget(seedOffset);
+            foreach (var configParameter in parameters)
+                if (configParameter.target.applicationFrequency == frequency)
+                    configParameter.ApplyToTarget();
         }
 
         internal void ResetParameterStates(int scenarioIteration)
         {
-            foreach (var parameter in parameters)
-                parameter.ResetState(scenarioIteration);
+            foreach (var configParameter in parameters)
+                configParameter.parameter.ResetState(scenarioIteration);
         }
 
         internal void ValidateParameters()
         {
             var parameterNames = new HashSet<string>();
-            foreach (var parameter in parameters)
+            foreach (var configParameter in parameters)
             {
-                if (parameterNames.Contains(parameter.name))
+                if (parameterNames.Contains(configParameter.name))
                     throw new ParameterConfigurationException(
-                        $"Two or more parameters cannot share the same name (\"{parameter.name}\")");
-                parameterNames.Add(parameter.name);
-                parameter.Validate();
+                        $"Two or more parameters cannot share the same name (\"{configParameter.name}\")");
+                parameterNames.Add(configParameter.name);
+                configParameter.parameter.Validate();
             }
         }
 

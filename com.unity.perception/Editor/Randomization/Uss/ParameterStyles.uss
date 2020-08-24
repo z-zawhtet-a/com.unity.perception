@@ -1,39 +1,8 @@
-.dark-viewport {
-    border-radius: 5px;
-    background-color: #191919;
-    padding: 2px;
-}
-
-.parameter-container {
+﻿.parameter-container {
     border-width: 2px;
     border-radius: 5px;
     flex-direction: row;
     margin: 2px 1px;
-}
-
-.parameter-type-menu {
-    margin: 1px 3px;
-    border-width: 1px;
-    border-radius: 3px;
-    background-color: #585858;
-}
-
-#parameter-type-menu .unity-toolbar-menu__text {
-    font-size: 13px;
-    padding: 3px;
-}
-
-.sampler-type-menu {
-    flex-grow: 1.5;
-    border-radius: 3px;
-    border-width: 1px;
-    margin-top: 2px;
-    margin-right: 3px;
-}
-
-.sampler-name {
-    /*color: lightgreen;*/
-    -unity-font-style: bold;
 }
 
 .parameter-type-label-container {
@@ -66,70 +35,10 @@
     padding-right: 6px;
 }
 
-.unity-toggle {
-    margin-left: 0;
-}
-
-.property-selection-container {
-    flex-direction: row;
-}
-
-.property-select-menu {
-    flex-grow: 1;
-    border-width: 1px;
-    padding-bottom: 1px;
-    border-radius: 3px;
-    margin-right: 1px;
-}
-
-.remove-parameter-button {
-    background-image: resource("Packages/com.unity.perception/Editor/Randomization/Icons/X.png");
-    width: 16px;
-    height: 16px;
-}
-
-.move-buttons-container {
-    width: auto;
-    margin-right: 6px;
-    border-color: black;
-    border-top-left-radius: 3px;
-    border-bottom-left-radius: 3px;
-    background-color: #2A2A2A;
-    padding: 3px 2px;
-    justify-content: center;
-}
-
-.drag-handle {
-    width: 16px;
-    height: 70%;
-    min-height: 20px;
-    background-image: resource("Packages/com.unity.perception/Editor/Randomization/Icons/DragHandle.png");
-}
-
-.move-button {
-    border-width: 0;
-    width: 42px;
-    height: 16px;
-    padding: 9px;
-    -unity-background-scale-mode: scale-to-fit;
-}
-
-.unity-imgui-container {
-    margin-left: 1px;
-    margin-right: 3px;
-}
-
-.search-icon {
-    width: 16px;
-    height: 16px;
-    margin-top: 2px;
-    flex-shrink: 0;
-    background-image: resource("Packages/com.unity.perception/Editor/Randomization/Icons/Search.png");
-}
-
 .collapse-parameter-toggle {
     flex-shrink: 0;
-    margin-right: 2px;
+    margin-right: 3px;
+    margin-left: 3px;
     width: 12px;
     height: 12px;
     background-image: resource("Packages/com.unity.perception/Editor/Randomization/Icons/FoldoutOpen.png");
@@ -198,16 +107,4 @@
     width: 12px;
     height: 14px;
     background-image: resource("Packages/com.unity.perception/Editor/Randomization/Icons/X.png");
-}
-
-.parameter-drag-bar {
-    width: 100px;
-    height: 6px;
-    background-color: rgba(100,149,237,0.4);
-    position: absolute;
-}
-
-.float-range .unity-base-field__label {
-    min-width: auto;
-    margin-right: 4px;
 }

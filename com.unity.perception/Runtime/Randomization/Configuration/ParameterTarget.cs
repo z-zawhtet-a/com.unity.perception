@@ -1,6 +1,7 @@
 ﻿using System;
+using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.Parameters
+namespace UnityEngine.Perception.Randomization.Configuration
 {
     /// <summary>
     /// Used to apply sampled parameter values to a particular GameObject, Component, and property.
@@ -64,6 +65,14 @@ namespace UnityEngine.Perception.Randomization.Parameters
                         $"Component type {componentType.Name} does not have a property named {propertyName}");
                 property.SetValue(component, value);
             }
+        }
+
+        internal void Validate()
+        {
+            if (component == null)
+                throw new ParameterValidationException("Null target component");
+            if (string.IsNullOrEmpty(propertyName))
+                throw new ParameterValidationException("Invalid target property");
         }
     }
 

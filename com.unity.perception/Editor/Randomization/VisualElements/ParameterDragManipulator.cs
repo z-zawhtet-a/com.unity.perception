@@ -6,15 +6,15 @@ namespace UnityEngine.Perception.Randomization.Editor
     {
         bool m_Active;
         float m_Offset;
-        ParameterElement m_ParameterElement;
+        ConfiguredParameterElement m_ParameterElement;
         VisualElement m_DragHandle;
         VisualElement m_DragBar;
         VisualElement m_ParameterContainer;
 
         protected override void RegisterCallbacksOnTarget()
         {
-            m_DragHandle = target.Q<VisualElement>("drag-handle");
-            m_ParameterElement = (ParameterElement)target;
+            m_ParameterElement = (ConfiguredParameterElement)target;
+            m_DragHandle = m_ParameterElement.Q<VisualElement>("drag-handle");
             m_DragHandle.RegisterCallback<MouseDownEvent>(OnMouseDown);
             m_DragHandle.RegisterCallback<MouseMoveEvent>(OnMouseMove);
             m_DragHandle.RegisterCallback<MouseUpEvent>(OnMouseUp);
@@ -35,7 +35,7 @@ namespace UnityEngine.Perception.Randomization.Editor
                 return;
             }
 
-            if (m_ParameterElement.ConfigEditor.FilterString != string.Empty)
+            if (m_ParameterElement.configEditor.FilterString != string.Empty)
                 return;
 
             m_ParameterContainer = target.parent;
@@ -95,7 +95,7 @@ namespace UnityEngine.Perception.Randomization.Editor
 
         void ReorderParameter(int currentIndex, int nextIndex)
         {
-            m_ParameterElement.ConfigEditor.ReorderParameter(currentIndex, nextIndex);
+            m_ParameterElement.configEditor.ReorderParameter(currentIndex, nextIndex);
         }
     }
 }

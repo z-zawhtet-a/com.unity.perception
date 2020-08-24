@@ -1,8 +1,7 @@
 using System;
+using Randomization.ParameterBehaviours;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
-using UnityEngine.Perception.Randomization.Configuration;
-using UnityEngine.Perception.Randomization.Parameters;
 
 namespace UnityEngine.Perception.Randomization.Scenarios
 {
@@ -76,31 +75,6 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         public abstract bool isScenarioComplete { get; }
 
         /// <summary>
-        /// Called before the scenario begins iterating
-        /// </summary>
-        public virtual void OnInitialize() { }
-
-        /// <summary>
-        /// Called at the beginning of every scenario iteration
-        /// </summary>
-        public virtual void OnIterationSetup() { }
-
-        /// <summary>
-        /// Called at the start of every frame
-        /// </summary>
-        public virtual void OnFrameStart() { }
-
-        /// <summary>
-        /// Called the frame after an iteration ends
-        /// </summary>
-        public virtual void OnIterationTeardown() { }
-
-        /// <summary>
-        /// Called when the scenario has finished iterating
-        /// </summary>
-        public virtual void OnComplete() { }
-
-        /// <summary>
         /// Serializes the scenario's constants to a JSON file located at serializedConstantsFilePath
         /// </summary>
         public abstract void Serialize();
@@ -124,9 +98,8 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         {
             if (deserializeOnStart)
                 Deserialize();
-            foreach (var config in ParameterConfiguration.configurations)
-                config.ValidateParameters();
-            OnInitialize();
+            foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                behaviour.Validate();
         }
 
         void Update()
@@ -151,14 +124,16 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 {
                     currentIteration++;
                     currentIterationFrame = 0;
-                    OnIterationTeardown();
+                    foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                        behaviour.OnIterationEnd();
                 }
             }
 
             // Quit if scenario is complete
             if (isScenarioComplete)
             {
-                OnComplete();
+                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                    behaviour.OnScenarioComplete();
                 DatasetCapture.ResetSimulation();
                 if (quitOnComplete)
 #if UNITY_EDITOR
@@ -172,17 +147,15 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             if (currentIterationFrame == 0)
             {
                 DatasetCapture.StartNewSequence();
-                foreach (var config in ParameterConfiguration.configurations)
-                    config.ResetParameterStates(currentIteration);
-                foreach (var config in ParameterConfiguration.configurations)
-                    config.ApplyParameters(currentIteration, ParameterApplicationFrequency.OnIterationSetup);
-                OnIterationSetup();
+                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                    behaviour.ResetState(currentIteration);
+                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                    behaviour.OnIterationStart();
             }
 
             // Perform new frame tasks
-            foreach (var config in ParameterConfiguration.configurations)
-                config.ApplyParameters(framesSinceInitialization, ParameterApplicationFrequency.EveryFrame);
-            OnFrameStart();
+            foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                behaviour.OnFrameStart();
         }
     }
 }

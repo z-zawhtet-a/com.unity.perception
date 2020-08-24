@@ -19,6 +19,12 @@ namespace UnityEngine.Perception.Randomization.Parameters
         [HideInInspector, SerializeReference] public ISampler value = new UniformSampler(0f, 1f);
 
         /// <summary>
+        /// A threshold value that transforms random values within the range [0, 1] to boolean values.
+        /// Values greater than the threshold are true, and values less than the threshold are false.
+        /// </summary>
+        [Range(0, 1)] public float threshold = 0.5f;
+
+        /// <summary>
         /// Returns an IEnumerable that iterates over each sampler field in this parameter
         /// </summary>
         public override IEnumerable<ISampler> samplers
@@ -26,7 +32,7 @@ namespace UnityEngine.Perception.Randomization.Parameters
             get { yield return value; }
         }
 
-        static bool Sample(float t) => t >= 0.5f;
+        bool Sample(float t) => t >= threshold;
 
         /// <summary>
         /// Generates a boolean sample
@@ -50,7 +56,8 @@ namespace UnityEngine.Perception.Randomization.Parameters
             jobHandle = new SamplesJob
             {
                 rngSamples = rngSamples,
-                samples = samples
+                samples = samples,
+                threshold = threshold
             }.Schedule(jobHandle);
             return samples;
         }
@@ -60,11 +67,12 @@ namespace UnityEngine.Perception.Randomization.Parameters
         {
             [DeallocateOnJobCompletion] public NativeArray<float> rngSamples;
             public NativeArray<bool> samples;
+            public float threshold;
 
             public void Execute()
             {
                 for (var i = 0; i < samples.Length; i++)
-                    samples[i] = Sample(rngSamples[i]);
+                    samples[i] = rngSamples[i] >= threshold;
             }
         }
     }

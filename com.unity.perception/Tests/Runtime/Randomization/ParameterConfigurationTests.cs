@@ -28,10 +28,8 @@ namespace RandomizationTests
         public void CheckForParametersWithSameNameTest()
         {
             var config = m_TestObject.AddComponent<ParameterConfiguration>();
-            var param1 = config.AddParameter<FloatParameter>();
-            var param2 = config.AddParameter<BooleanParameter>();
-            param1.name = "SameName";
-            param2.name = "SameName";
+            config.AddParameter<FloatParameter>("SameName");
+            config.AddParameter<BooleanParameter>("SameName");
             Assert.Throws<ParameterConfigurationException>(() => config.ValidateParameters());
         }
 
@@ -39,8 +37,8 @@ namespace RandomizationTests
         public void AddingNonParameterTypesTest()
         {
             var config = m_TestObject.AddComponent<ParameterConfiguration>();
-            Assert.DoesNotThrow(() => config.AddParameter(typeof(FloatParameter)));
-            Assert.Throws<ParameterConfigurationException>(() => config.AddParameter(typeof(Rigidbody)));
+            Assert.DoesNotThrow(() => config.AddParameter("TestParam1", typeof(FloatParameter)));
+            Assert.Throws<ParameterConfigurationException>(() => config.AddParameter("TestParam2", typeof(Rigidbody)));
         }
     }
 }

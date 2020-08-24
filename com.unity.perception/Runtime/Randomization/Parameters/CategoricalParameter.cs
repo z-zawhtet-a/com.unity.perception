@@ -11,7 +11,7 @@ namespace UnityEngine.Perception.Randomization.Parameters
     [Serializable]
     public abstract class CategoricalParameter<T> : CategoricalParameterBase
     {
-        [SerializeField] internal bool uniform;
+        [SerializeField] internal bool uniform = true;
         [SerializeReference] ISampler m_Sampler = new UniformSampler(0f, 1f);
 
         [SerializeField] List<T> m_Categories = new List<T>();
@@ -119,7 +119,7 @@ namespace UnityEngine.Perception.Randomization.Parameters
         /// Validates the categorical probabilities assigned to this parameter
         /// </summary>
         /// <exception cref="ParameterValidationException"></exception>
-        internal override void Validate()
+        public override void Validate()
         {
             base.Validate();
             if (!uniform)
@@ -185,11 +185,13 @@ namespace UnityEngine.Perception.Randomization.Parameters
                 : m_Categories[BinarySearch(randomValue)];
         }
 
-        internal sealed override void ApplyToTarget(int seedOffset)
+        /// <summary>
+        /// Generates a generic sample
+        /// </summary>
+        /// <returns>The generated sample</returns>
+        public override object GenericSample()
         {
-            if (!hasTarget)
-                return;
-            target.ApplyValueToTarget(Sample());
+            return Sample();
         }
     }
 }
