@@ -6,15 +6,15 @@ namespace UnityEngine.Perception.Randomization.Editor
     {
         bool m_Active;
         float m_Offset;
-        ConfiguredParameterElement m_ParameterElement;
+        ParameterListItemElement m_ParameterListItemElement;
         VisualElement m_DragHandle;
         VisualElement m_DragBar;
         VisualElement m_ParameterContainer;
 
         protected override void RegisterCallbacksOnTarget()
         {
-            m_ParameterElement = (ConfiguredParameterElement)target;
-            m_DragHandle = m_ParameterElement.Q<VisualElement>("drag-handle");
+            m_ParameterListItemElement = (ParameterListItemElement)target;
+            m_DragHandle = m_ParameterListItemElement.Q<VisualElement>("drag-handle");
             m_DragHandle.RegisterCallback<MouseDownEvent>(OnMouseDown);
             m_DragHandle.RegisterCallback<MouseMoveEvent>(OnMouseMove);
             m_DragHandle.RegisterCallback<MouseUpEvent>(OnMouseUp);
@@ -35,7 +35,7 @@ namespace UnityEngine.Perception.Randomization.Editor
                 return;
             }
 
-            if (m_ParameterElement.configEditor.FilterString != string.Empty)
+            if (m_ParameterListItemElement.configEditor.FilterString != string.Empty)
                 return;
 
             m_ParameterContainer = target.parent;
@@ -86,16 +86,16 @@ namespace UnityEngine.Perception.Randomization.Editor
             {
                 if (dragBarY < middlePoints[i])
                 {
-                    ReorderParameter(m_ParameterElement.ParameterIndex, i);
+                    ReorderParameter(m_ParameterListItemElement.ParameterIndex, i);
                     return;
                 }
             }
-            ReorderParameter(m_ParameterElement.ParameterIndex, middlePoints.Length);
+            ReorderParameter(m_ParameterListItemElement.ParameterIndex, middlePoints.Length);
         }
 
         void ReorderParameter(int currentIndex, int nextIndex)
         {
-            m_ParameterElement.configEditor.ReorderParameter(currentIndex, nextIndex);
+            m_ParameterListItemElement.configEditor.ReorderParameter(currentIndex, nextIndex);
         }
     }
 }

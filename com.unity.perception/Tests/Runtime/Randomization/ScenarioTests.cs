@@ -4,7 +4,7 @@ using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
-using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.Perception.Randomization.Samplers;
 using UnityEngine.Perception.Randomization.Scenarios;
@@ -110,14 +110,14 @@ namespace RandomizationTests
         [UnityTest]
         public IEnumerator AppliesParametersEveryFrame()
         {
-            var config = m_TestObject.AddComponent<ParameterConfiguration>();
+            var config = m_TestObject.AddComponent<ParameterList>();
             var configuredParameter = config.AddParameter<Vector3Parameter>("testParam");
             var parameter = (Vector3Parameter)configuredParameter.parameter;
             parameter.x = new UniformSampler(1, 2);
             parameter.y = new UniformSampler(1, 2);
             parameter.z = new UniformSampler(1, 2);
             configuredParameter.target.AssignNewTarget(
-                m_TestObject, m_TestObject.transform, "position", ParameterApplicationFrequency.EveryFrame);
+                m_TestObject.transform, "position", ParameterApplicationFrequency.EveryFrame);
 
             var initialPosition = Vector3.zero;
             yield return CreateNewScenario(1, 5);
@@ -135,7 +135,7 @@ namespace RandomizationTests
         [UnityTest]
         public IEnumerator AppliesParametersEveryIteration()
         {
-            var config = m_TestObject.AddComponent<ParameterConfiguration>();
+            var config = m_TestObject.AddComponent<ParameterList>();
             var configuredParameter = config.AddParameter<Vector3Parameter>("testParam");
             var parameter = (Vector3Parameter)configuredParameter.parameter;
             parameter.x = new UniformSampler(1, 2);
@@ -146,7 +146,7 @@ namespace RandomizationTests
             var prevPosition = new Vector3();
             transform.position = prevPosition;
             configuredParameter.target.AssignNewTarget(
-                m_TestObject, transform, "position", ParameterApplicationFrequency.OnIterationStart);
+                transform, "position", ParameterApplicationFrequency.OnIterationStart);
 
 
             yield return CreateNewScenario(2, 2);

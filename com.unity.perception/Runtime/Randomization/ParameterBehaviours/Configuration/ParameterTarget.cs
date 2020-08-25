@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
+namespace UnityEngine.Perception.Randomization.ParameterBehaviours
 {
     /// <summary>
     /// Used to apply sampled parameter values to a particular GameObject, Component, and property.
@@ -10,7 +10,6 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
     [Serializable]
     public class ParameterTarget
     {
-        [SerializeField] internal GameObject gameObject;
         [SerializeField] internal Component component;
         [SerializeField] internal string propertyName = string.Empty;
         [SerializeField] internal FieldOrProperty fieldOrProperty = FieldOrProperty.Field;
@@ -19,17 +18,14 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
         /// <summary>
         /// Assigns a new target
         /// </summary>
-        /// <param name="targetObject">The target GameObject</param>
         /// <param name="targetComponent">The target component on the target GameObject</param>
         /// <param name="fieldOrPropertyName">The name of the property to apply the parameter to</param>
         /// <param name="frequency">How often to apply the parameter to its target</param>
         public void AssignNewTarget(
-            GameObject targetObject,
             Component targetComponent,
             string fieldOrPropertyName,
             ParameterApplicationFrequency frequency)
         {
-            gameObject = targetObject;
             component = targetComponent;
             propertyName = fieldOrPropertyName;
             applicationFrequency = frequency;
@@ -41,7 +37,6 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
 
         internal void Clear()
         {
-            gameObject = null;
             component = null;
             propertyName = string.Empty;
         }
@@ -82,7 +77,7 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
     public enum ParameterApplicationFrequency
     {
         /// <summary>
-        /// Applies a parameter once every iteration
+        /// Applies a parameter once at the beginning of every iteration
         /// </summary>
         OnIterationStart,
 

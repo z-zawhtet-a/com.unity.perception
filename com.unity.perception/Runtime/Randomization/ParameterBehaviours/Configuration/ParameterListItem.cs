@@ -1,16 +1,16 @@
 ﻿using System;
 using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
+namespace UnityEngine.Perception.Randomization.ParameterBehaviours
 {
     [Serializable]
-    class ConfiguredParameter
+    class ParameterListItem
     {
         public string name = "Parameter";
         [SerializeReference] public Parameter parameter;
         [HideInInspector, SerializeField] public ParameterTarget target = new ParameterTarget();
 
-        public bool hasTarget => target.gameObject != null;
+        public bool hasTarget => target.component != null;
 
         public void ApplyToTarget()
         {

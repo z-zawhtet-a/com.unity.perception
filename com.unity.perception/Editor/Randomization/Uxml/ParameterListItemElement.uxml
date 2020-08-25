@@ -16,14 +16,11 @@
 
             <VisualElement name="properties" class="parameter-properties-container">
                 <Box>
-                    <editor:ObjectField label="Target GameObject" name="target"/>
-                    <VisualElement name="target-container">
-                        <VisualElement class="unity-base-field">
-                            <Label text="Target Property" class="unity-base-field__label"/>
-                            <editor:ToolbarMenu text="Select A Property" name="property-select-menu" class="property-select-menu"/>
-                        </VisualElement>
-                        <editor:EnumField label="Application Frequency" name="application-frequency"/>
+                    <VisualElement class="unity-base-field">
+                        <Label text="Target Property" class="unity-base-field__label"/>
+                        <editor:ToolbarMenu text="Select A Property" name="property-select-menu" class="property-select-menu"/>
                     </VisualElement>
+                    <editor:EnumField label="Application Frequency" name="application-frequency"/>
                 </Box>
             </VisualElement>
         </VisualElement>

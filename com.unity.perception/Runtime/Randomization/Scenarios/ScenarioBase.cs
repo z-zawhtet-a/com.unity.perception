@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Randomization.ParameterBehaviours;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
@@ -8,6 +9,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
     /// <summary>
     /// The base class of all scenario classes
     /// </summary>
+    [DefaultExecutionOrder(-1)]
     public abstract class ScenarioBase : MonoBehaviour
     {
         static ScenarioBase s_ActiveScenario;
@@ -37,8 +39,8 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             get => s_ActiveScenario;
             private set
             {
-                if (s_ActiveScenario != null)
-                    throw new ScenarioException("There cannot be more than one active ParameterConfiguration");
+                if (value != null && s_ActiveScenario != null && value != s_ActiveScenario)
+                    throw new ScenarioException("There cannot be more than one active Scenario");
                 s_ActiveScenario = value;
             }
         }
@@ -84,6 +86,11 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         public abstract void Deserialize();
 
+        void Awake()
+        {
+            ActiveScenario = this;
+        }
+
         void OnEnable()
         {
             ActiveScenario = this;
@@ -98,7 +105,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         {
             if (deserializeOnStart)
                 Deserialize();
-            foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+            foreach (var behaviour in ParameterBehaviour.behaviours)
                 behaviour.Validate();
         }
 
@@ -124,7 +131,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 {
                     currentIteration++;
                     currentIterationFrame = 0;
-                    foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                    foreach (var behaviour in ParameterBehaviour.behaviours)
                         behaviour.OnIterationEnd();
                 }
             }
@@ -132,7 +139,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             // Quit if scenario is complete
             if (isScenarioComplete)
             {
-                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                foreach (var behaviour in ParameterBehaviour.behaviours)
                     behaviour.OnScenarioComplete();
                 DatasetCapture.ResetSimulation();
                 if (quitOnComplete)
@@ -144,17 +151,18 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             }
 
             // Perform new iteration tasks
+
             if (currentIterationFrame == 0)
             {
                 DatasetCapture.StartNewSequence();
-                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
-                    behaviour.ResetState(currentIteration);
-                foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+                foreach (var behaviour in ParameterBehaviour.behaviours)
+                    behaviour.ResetState();
+                foreach (var behaviour in ParameterBehaviour.behaviours)
                     behaviour.OnIterationStart();
             }
 
             // Perform new frame tasks
-            foreach (var behaviour in ParameterBehaviour.activeBehaviours)
+            foreach (var behaviour in ParameterBehaviour.behaviours)
                 behaviour.OnFrameStart();
         }
     }

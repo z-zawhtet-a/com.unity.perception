@@ -2,20 +2,20 @@ using System;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.UIElements;
-using UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration;
+using UnityEngine.Perception.Randomization.ParameterBehaviours;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.UIElements;
 
 namespace UnityEngine.Perception.Randomization.Editor
 {
-    [CustomEditor(typeof(ParameterConfiguration))]
-    class ParameterConfigurationEditor : UnityEditor.Editor
+    [CustomEditor(typeof(ParameterList))]
+    class ParameterListEditor : UnityEditor.Editor
     {
         VisualElement m_Root;
         VisualElement m_ParameterContainer;
         SerializedProperty m_Parameters;
 
-        public ParameterConfiguration config;
+        public ParameterList config;
 
         string m_FilterString = string.Empty;
         public string FilterString
@@ -29,17 +29,17 @@ namespace UnityEngine.Perception.Randomization.Editor
                 {
                     var paramIndex = m_ParameterContainer.IndexOf(child);
                     var param = config.configuredParameters[paramIndex];
-                    ((ConfiguredParameterElement)child).filtered = param.name.ToLower().Contains(lowerFilter);
+                    ((ParameterListItemElement)child).filtered = param.name.ToLower().Contains(lowerFilter);
                 }
             }
         }
 
         public override VisualElement CreateInspectorGUI()
         {
-            config = (ParameterConfiguration)target;
-            m_Parameters = serializedObject.FindProperty("parameters");
+            config = (ParameterList)target;
+            m_Parameters = serializedObject.FindProperty("configuredParameters");
             m_Root = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
-                $"{StaticData.uxmlDir}/ParameterConfiguration.uxml").CloneTree();
+                $"{StaticData.uxmlDir}/ParameterListEditor.uxml").CloneTree();
 
             m_ParameterContainer = m_Root.Q<VisualElement>("parameters-container");
 
@@ -70,7 +70,7 @@ namespace UnityEngine.Perception.Randomization.Editor
         {
             m_ParameterContainer.Clear();
             for (var i = 0; i < m_Parameters.arraySize; i++)
-                m_ParameterContainer.Add(new ConfiguredParameterElement(m_Parameters.GetArrayElementAtIndex(i), this));
+                m_ParameterContainer.Add(new ParameterListItemElement(m_Parameters.GetArrayElementAtIndex(i), this));
         }
 
         void AddParameter(Type parameterType)
@@ -115,7 +115,7 @@ namespace UnityEngine.Perception.Randomization.Editor
         void CollapseParameters(bool collapsed)
         {
             foreach (var child in m_ParameterContainer.Children())
-                ((ConfiguredParameterElement)child).collapsed = collapsed;
+                ((ParameterListItemElement)child).collapsed = collapsed;
         }
     }
 }

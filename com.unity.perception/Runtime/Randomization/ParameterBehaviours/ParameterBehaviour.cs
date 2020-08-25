@@ -1,26 +1,50 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.Perception.Randomization.Samplers;
+using UnityEngine.Perception.Randomization.Scenarios;
 
 namespace Randomization.ParameterBehaviours
 {
     public abstract class ParameterBehaviour : MonoBehaviour
     {
-        internal static HashSet<ParameterBehaviour> activeBehaviours = new HashSet<ParameterBehaviour>();
+        static HashSet<ParameterBehaviour> s_ActiveBehaviours = new HashSet<ParameterBehaviour>();
+        static Queue<ParameterBehaviour> s_PendingBehaviours = new Queue<ParameterBehaviour>();
+
+        internal static IEnumerable<ParameterBehaviour> behaviours
+        {
+            get
+            {
+                var currentBehaviours = s_ActiveBehaviours.ToArray();
+                foreach (var behaviour in currentBehaviours)
+                    if (s_ActiveBehaviours.Contains(behaviour))
+                        yield return behaviour;
+                while (s_PendingBehaviours.Count > 0)
+                {
+                    var behaviour = s_PendingBehaviours.Dequeue();
+                    if (!s_ActiveBehaviours.Contains(behaviour))
+                    {
+                        s_ActiveBehaviours.Add(behaviour);
+                        yield return behaviour;
+                    }
+                }
+            }
+        }
 
         public abstract IEnumerable<Parameter> parameters { get; }
 
         protected virtual void OnEnable()
         {
-            activeBehaviours.Add(this);
+            s_PendingBehaviours.Enqueue(this);
+            ResetState();
             OnInitialize();
         }
 
         protected virtual void OnDisable()
         {
-            activeBehaviours.Remove(this);
+            s_PendingBehaviours.Enqueue(this);
         }
 
         protected virtual void OnInitialize() { }
@@ -35,10 +59,14 @@ namespace Randomization.ParameterBehaviours
 
         public virtual void Validate() { }
 
-        internal void ResetState(int scenarioIteration)
+        internal void ResetState()
         {
             foreach (var parameter in parameters)
-                parameter.ResetState(scenarioIteration);
+            {
+                parameter.ResetState();
+                parameter.IterateState(ScenarioBase.ActiveScenario.currentIteration);
+                parameter.IterateState(GetInstanceID());
+            }
         }
 
         public virtual void Reset()

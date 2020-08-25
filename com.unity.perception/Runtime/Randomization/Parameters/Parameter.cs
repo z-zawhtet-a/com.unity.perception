@@ -80,16 +80,22 @@ namespace UnityEngine.Perception.Randomization.Parameters
         }
 
         /// <summary>
-        /// Resets sampler states and then offsets those states using the current scenario iteration
+        /// Resets the state of each sampler employed by this parameter
         /// </summary>
-        /// <param name="scenarioIteration">The current scenario iteration</param>
-        public void ResetState(int scenarioIteration)
+        public void ResetState()
         {
             foreach (var sampler in samplers)
-            {
                 sampler.ResetState();
-                sampler.IterateState(scenarioIteration);
-            }
+        }
+
+        /// <summary>
+        /// Offsets the state of each sampler employed by this parameter
+        /// </summary>
+        /// <param name="offsetIndex">Often the current scenario iteration</param>
+        public void IterateState(int offsetIndex)
+        {
+            foreach (var sampler in samplers)
+                sampler.IterateState(offsetIndex);
         }
 
         /// <summary>

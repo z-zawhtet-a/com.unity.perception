@@ -4,16 +4,16 @@ using Randomization.ParameterBehaviours;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Parameters;
 
-namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
+namespace UnityEngine.Perception.Randomization.ParameterBehaviours
 {
     /// <summary>
-    /// Creates parameter interfaces for randomizing simulations
+    /// Defines a list of parameters for randomizing simulations
     /// </summary>
     [ExecuteInEditMode]
-    [AddComponentMenu("Perception/Randomization/ParameterConfiguration")]
-    public class ParameterConfiguration : ParameterBehaviour
+    [AddComponentMenu("Perception/Randomization/Parameter List")]
+    public class ParameterList : ParameterBehaviour
     {
-        [SerializeReference] internal List<ConfiguredParameter> configuredParameters = new List<ConfiguredParameter>();
+        [SerializeReference] internal List<ParameterListItem> configuredParameters = new List<ParameterListItem>();
 
         public override IEnumerable<Parameter> parameters
         {
@@ -24,20 +24,20 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
             }
         }
 
-        internal ConfiguredParameter AddParameter<T>(string parameterName) where T : Parameter, new()
+        internal ParameterListItem AddParameter<T>(string parameterName) where T : Parameter, new()
         {
             var parameter = new T();
-            var configParameter = new ConfiguredParameter { name = parameterName, parameter = parameter };
+            var configParameter = new ParameterListItem { name = parameterName, parameter = parameter };
             configuredParameters.Add(configParameter);
             return configParameter;
         }
 
-        internal ConfiguredParameter AddParameter(string parameterName, Type parameterType)
+        internal ParameterListItem AddParameter(string parameterName, Type parameterType)
         {
             if (!parameterType.IsSubclassOf(typeof(Parameter)))
-                throw new ParameterConfigurationException($"Cannot add non-parameter types ({parameterType})");
+                throw new ParameterListException($"Cannot add non-parameter types ({parameterType})");
             var parameter = (Parameter)Activator.CreateInstance(parameterType);
-            var configParameter = new ConfiguredParameter { name = parameterName, parameter = parameter };
+            var configParameter = new ParameterListItem { name = parameterName, parameter = parameter };
             configuredParameters.Add(configParameter);
             return configParameter;
         }
@@ -48,7 +48,7 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
         /// <param name="parameterName">The name of the parameter to lookup</param>
         /// <param name="parameterType">The type of parameter to lookup</param>
         /// <returns>The parameter if found, null otherwise</returns>
-        /// <exception cref="ParameterConfigurationException"></exception>
+        /// <exception cref="ParameterListException"></exception>
         public Parameter GetParameter(string parameterName, Type parameterType)
         {
             foreach (var configParameter in configuredParameters)
@@ -95,7 +95,7 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours.Configuration
             foreach (var configParameter in configuredParameters)
             {
                 if (parameterNames.Contains(configParameter.name))
-                    throw new ParameterConfigurationException(
+                    throw new ParameterListException(
                         $"Two or more parameters cannot share the same name (\"{configParameter.name}\")");
                 parameterNames.Add(configParameter.name);
                 configParameter.Validate();
