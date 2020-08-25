@@ -8,7 +8,7 @@ using UnityEngine.Perception.Randomization.Samplers;
 namespace UnityEngine.Perception.Randomization.Parameters
 {
     /// <summary>
-    /// A numeric parameter for generating Color samples
+    /// A numeric parameter for generating RGBA color samples
     /// </summary>
     [Serializable]
     public class ColorRgbParameter : NumericParameter<Color>

@@ -15,6 +15,9 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
     {
         [SerializeReference] internal List<ParameterListItem> configuredParameters = new List<ParameterListItem>();
 
+        /// <summary>
+        /// The parameters contained within this ParameterList
+        /// </summary>
         public override IEnumerable<Parameter> parameters
         {
             get
@@ -75,13 +78,19 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
             return null;
         }
 
+        /// <summary>
+        /// Applies parameter samples to their targets at the start of each scenario iteration
+        /// </summary>
         public override void OnIterationStart()
         {
             foreach (var configParameter in configuredParameters)
-                if (configParameter.target.applicationFrequency == ParameterApplicationFrequency.OnIterationStart)
+                if (configParameter.target.applicationFrequency == ParameterApplicationFrequency.EveryIteration)
                     configParameter.ApplyToTarget();
         }
 
+        /// <summary>
+        /// Applies parameter samples to their targets at the start of every frame
+        /// </summary>
         public override void OnFrameStart()
         {
             foreach (var configParameter in configuredParameters)
@@ -89,6 +98,10 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
                     configParameter.ApplyToTarget();
         }
 
+        /// <summary>
+        /// Validates the settings of each parameter within this ParameterList
+        /// </summary>
+        /// <exception cref="ParameterListException"></exception>
         public override void Validate()
         {
             var parameterNames = new HashSet<string>();

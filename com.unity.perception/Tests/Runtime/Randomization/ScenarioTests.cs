@@ -146,7 +146,7 @@ namespace RandomizationTests
             var prevPosition = new Vector3();
             transform.position = prevPosition;
             configuredParameter.target.AssignNewTarget(
-                transform, "position", ParameterApplicationFrequency.OnIterationStart);
+                transform, "position", ParameterApplicationFrequency.EveryIteration);
 
 
             yield return CreateNewScenario(2, 2);

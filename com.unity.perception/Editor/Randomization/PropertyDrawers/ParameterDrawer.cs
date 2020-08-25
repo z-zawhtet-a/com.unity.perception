@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 namespace UnityEngine.Perception.Randomization.Editor.PropertyDrawers
 {
     [CustomPropertyDrawer(typeof(Parameter), true)]
-    public class ParameterDrawer : PropertyDrawer
+    class ParameterDrawer : PropertyDrawer
     {
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {

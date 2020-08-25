@@ -13,7 +13,7 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
         [SerializeField] internal Component component;
         [SerializeField] internal string propertyName = string.Empty;
         [SerializeField] internal FieldOrProperty fieldOrProperty = FieldOrProperty.Field;
-        [SerializeField] internal ParameterApplicationFrequency applicationFrequency = ParameterApplicationFrequency.OnIterationStart;
+        [SerializeField] internal ParameterApplicationFrequency applicationFrequency = ParameterApplicationFrequency.EveryIteration;
 
         /// <summary>
         /// Assigns a new target
@@ -77,12 +77,12 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
     public enum ParameterApplicationFrequency
     {
         /// <summary>
-        /// Applies a parameter once at the beginning of every iteration
+        /// Applies a parameter at the beginning of every iteration
         /// </summary>
-        OnIterationStart,
+        EveryIteration,
 
         /// <summary>
-        /// Applies a parameter once every frame
+        /// Applies a parameter at the beginning of every frame
         /// </summary>
         EveryFrame
     }

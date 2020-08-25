@@ -41,7 +41,9 @@ namespace UnityEngine.Perception.Randomization.Parameters
             return Sample();
         }
 
-
+        /// <summary>
+        /// Validate the settings of this parameter
+        /// </summary>
         public override void Validate()
         {
             base.Validate();

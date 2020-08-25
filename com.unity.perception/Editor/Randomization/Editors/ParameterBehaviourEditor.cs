@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 namespace UnityEngine.Perception.Randomization.Editor
 {
     [CustomEditor(typeof(ParameterBehaviour), true)]
-    public class ParameterBehaviourEditor : UnityEditor.Editor
+    class ParameterBehaviourEditor : UnityEditor.Editor
     {
         public override VisualElement CreateInspectorGUI()
         {

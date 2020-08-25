@@ -5,7 +5,7 @@ using UnityEngine.UIElements;
 namespace UnityEngine.Perception.Randomization.Editor.PropertyDrawers
 {
     [CustomPropertyDrawer(typeof(ColorHsva), true)]
-    public class ColorHsvaDrawer : PropertyDrawer
+    class ColorHsvaDrawer : PropertyDrawer
     {
         public override VisualElement CreatePropertyGUI(SerializedProperty property)
         {
