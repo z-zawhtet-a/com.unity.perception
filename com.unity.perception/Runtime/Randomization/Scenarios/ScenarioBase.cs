@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Randomization.ParameterBehaviours;
+using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
 
@@ -15,6 +16,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         static ScenarioBase s_ActiveScenario;
         bool m_SkipFrame = true;
         bool m_FirstScenarioFrame = true;
+        bool m_WaitingForFinalUploads = false;
 
         /// <summary>
         /// If true, this scenario will quit the Unity application when it's finished executing
@@ -118,6 +120,21 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 return;
             }
 
+            // Wait for any final uploads before exiting quitting
+            if (m_WaitingForFinalUploads)
+            {
+                if (!Manager.FinalUploadsDone)
+                    return;
+
+                if (quitOnComplete)
+#if UNITY_EDITOR
+                    UnityEditor.EditorApplication.ExitPlaymode();
+#else
+                    Application.Quit();
+#endif
+                return;
+            }
+
             // Iterate Scenario
             if (m_FirstScenarioFrame)
             {
@@ -141,17 +158,13 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             {
                 foreach (var behaviour in ParameterBehaviour.behaviours)
                     behaviour.OnScenarioComplete();
+                Manager.Instance.Shutdown();
                 DatasetCapture.ResetSimulation();
-                if (quitOnComplete)
-#if UNITY_EDITOR
-                    UnityEditor.EditorApplication.isPlaying = false;
-#else
-                Application.Quit();
-#endif
+                m_WaitingForFinalUploads = true;
+                return;
             }
 
             // Perform new iteration tasks
-
             if (currentIterationFrame == 0)
             {
                 DatasetCapture.StartNewSequence();
