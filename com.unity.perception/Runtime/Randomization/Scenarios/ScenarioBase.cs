@@ -16,7 +16,9 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         static ScenarioBase s_ActiveScenario;
         bool m_SkipFrame = true;
         bool m_FirstScenarioFrame = true;
-        bool m_WaitingForFinalUploads = false;
+        bool m_WaitingForFinalUploads;
+
+        [SerializeReference] public RandomParametersAsset[] parameters;
 
         /// <summary>
         /// If true, this scenario will quit the Unity application when it's finished executing
