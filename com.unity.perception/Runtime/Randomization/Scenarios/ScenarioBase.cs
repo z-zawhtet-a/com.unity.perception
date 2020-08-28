@@ -18,7 +18,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         bool m_FirstScenarioFrame = true;
         bool m_WaitingForFinalUploads;
 
-        [SerializeReference] public RandomParametersAsset[] parameters;
+        [SerializeReference] public ParameterAsset[] parameters;
 
         /// <summary>
         /// If true, this scenario will quit the Unity application when it's finished executing
@@ -109,8 +109,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         {
             if (deserializeOnStart)
                 Deserialize();
-            foreach (var behaviour in ParameterBehaviour.behaviours)
-                behaviour.Validate();
+            ParameterBehaviour.activeBehaviour.Validate();
         }
 
         void Update()
@@ -150,16 +149,14 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 {
                     currentIteration++;
                     currentIterationFrame = 0;
-                    foreach (var behaviour in ParameterBehaviour.behaviours)
-                        behaviour.OnIterationEnd();
+                    ParameterBehaviour.activeBehaviour.OnIterationEnd();
                 }
             }
 
             // Quit if scenario is complete
             if (isScenarioComplete)
             {
-                foreach (var behaviour in ParameterBehaviour.behaviours)
-                    behaviour.OnScenarioComplete();
+                ParameterBehaviour.activeBehaviour.OnScenarioComplete();
                 Manager.Instance.Shutdown();
                 DatasetCapture.ResetSimulation();
                 m_WaitingForFinalUploads = true;
@@ -170,15 +167,12 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             if (currentIterationFrame == 0)
             {
                 DatasetCapture.StartNewSequence();
-                foreach (var behaviour in ParameterBehaviour.behaviours)
-                    behaviour.ResetState();
-                foreach (var behaviour in ParameterBehaviour.behaviours)
-                    behaviour.OnIterationStart();
+                ParameterBehaviour.activeBehaviour.ResetParameterRandomStates();
+                ParameterBehaviour.activeBehaviour.OnIterationStart();
             }
 
             // Perform new frame tasks
-            foreach (var behaviour in ParameterBehaviour.behaviours)
-                behaviour.OnFrameStart();
+            ParameterBehaviour.activeBehaviour.OnFrameStart();
         }
     }
 }

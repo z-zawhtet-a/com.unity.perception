@@ -6,7 +6,7 @@ using UnityEngine.Perception.Randomization.Samplers;
 
 namespace Randomization.ParameterBehaviours
 {
-    public abstract class RandomParametersAsset : ScriptableObject
+    public abstract class ParameterAsset : ScriptableObject
     {
         public abstract IEnumerable<Parameter> parameters { get; }
 
@@ -15,6 +15,16 @@ namespace Randomization.ParameterBehaviours
         /// </summary>
         void Reset()
         {
+            var fields = GetType().GetFields();
+            foreach (var field in fields)
+            {
+                if (!field.IsPublic || !field.FieldType.IsSubclassOf(typeof(Parameter)))
+                    continue;
+                var parameter = (Parameter)field.GetValue(this);
+                if (parameter == null)
+                    field.SetValue(this, Activator.CreateInstance(field.FieldType));
+            }
+
             foreach (var parameter in parameters)
             foreach (var sampler in parameter.samplers)
                 sampler.baseSeed = SamplerUtility.GenerateRandomSeed();

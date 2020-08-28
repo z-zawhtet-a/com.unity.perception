@@ -9,19 +9,11 @@
                 <Box class="parameter-type-label-box">
                     <VisualElement name="collapse" class="collapse-parameter-toggle foldout-open"/>
                     <Label name="parameter-type-label" text="Type:" class="parameter-type-label"/>
-                    <TextField name="name" text="Parameter Name"/>
+                    <TextElement name="name" text="Field Name"/>
                 </Box>
-                <Button name="remove-parameter" class="remove-parameter-button"/>
             </VisualElement>
 
             <VisualElement name="properties" class="parameter-properties-container">
-                <Box>
-                    <VisualElement class="unity-base-field">
-                        <Label text="Target Property" class="unity-base-field__label"/>
-                        <editor:ToolbarMenu text="Select A Property" name="property-select-menu" class="property-select-menu"/>
-                    </VisualElement>
-                    <editor:EnumField label="Application Frequency" name="application-frequency"/>
-                </Box>
             </VisualElement>
         </VisualElement>
     </Box>

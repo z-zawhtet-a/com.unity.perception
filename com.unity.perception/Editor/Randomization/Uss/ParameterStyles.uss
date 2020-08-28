@@ -26,8 +26,8 @@
 
 .parameter-type-label {
     color: cornflowerblue;
-    /*min-width: 120px;*/
     -unity-text-align: middle-left;
+    margin-right: 4px;
 }
 
 .parameter-type-label-box .unity-base-text-field__input {

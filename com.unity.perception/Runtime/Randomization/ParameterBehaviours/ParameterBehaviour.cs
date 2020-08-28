@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Parameters;
 using UnityEngine.Perception.Randomization.Samplers;
@@ -13,26 +12,15 @@ namespace Randomization.ParameterBehaviours
     /// </summary>
     public abstract class ParameterBehaviour : MonoBehaviour
     {
-        static HashSet<ParameterBehaviour> s_ActiveBehaviours = new HashSet<ParameterBehaviour>();
-        static Queue<ParameterBehaviour> s_PendingBehaviours = new Queue<ParameterBehaviour>();
-
-        internal static IEnumerable<ParameterBehaviour> behaviours
+        static ParameterBehaviour s_ActiveBehaviour;
+        internal static ParameterBehaviour activeBehaviour
         {
-            get
+            get => s_ActiveBehaviour;
+            private set
             {
-                var currentBehaviours = s_ActiveBehaviours.ToArray();
-                foreach (var behaviour in currentBehaviours)
-                    if (s_ActiveBehaviours.Contains(behaviour))
-                        yield return behaviour;
-                while (s_PendingBehaviours.Count > 0)
-                {
-                    var behaviour = s_PendingBehaviours.Dequeue();
-                    if (!s_ActiveBehaviours.Contains(behaviour))
-                    {
-                        s_ActiveBehaviours.Add(behaviour);
-                        yield return behaviour;
-                    }
-                }
+                if (value != null && s_ActiveBehaviour != null && value != s_ActiveBehaviour)
+                    throw new Exception("There cannot be more than one active Scenario");
+                s_ActiveBehaviour = value;
             }
         }
 
@@ -46,8 +34,8 @@ namespace Randomization.ParameterBehaviours
         /// </summary>
         protected void OnEnable()
         {
-            s_PendingBehaviours.Enqueue(this);
-            ResetState();
+            activeBehaviour = this;
+            ResetParameterRandomStates();
         }
 
         /// <summary>
@@ -55,7 +43,7 @@ namespace Randomization.ParameterBehaviours
         /// </summary>
         protected void OnDisable()
         {
-            s_PendingBehaviours.Enqueue(this);
+            activeBehaviour = null;
         }
 
         /// <summary>
@@ -100,7 +88,7 @@ namespace Randomization.ParameterBehaviours
         /// <summary>
         /// Resets the state of each sampler on every parameter used by this ParameterBehaviour
         /// </summary>
-        internal void ResetState()
+        internal void ResetParameterRandomStates()
         {
             foreach (var parameter in parameters)
             {
