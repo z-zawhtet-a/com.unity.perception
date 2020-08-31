@@ -39,21 +39,21 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         [SuppressMessage("ReSharper", "InconsistentNaming")]
-        abstract class BoxData
+        public abstract class BoxData
         {
             public int label_id;
             public string label_name;
             public uint instance_id;
         }
 
-        class KittiData : BoxData
+        public class KittiData : BoxData
         {
             public float[] translation;
             public float[] size;
             public float yaw;
         }
 
-        class VerboseData : BoxData
+        public class VerboseData : BoxData
         {
             public float[] translation;
             public float[] size;
@@ -75,6 +75,8 @@ namespace UnityEngine.Perception.GroundTruth
         public IdLabelConfig idLabelConfig;
 
         protected override bool supportsVisualization => false;
+
+        public event Action<int, BoxData> BoundingBoxComputed;
 
         public BoundingBox3DLabeler() {}
 
@@ -115,50 +117,39 @@ namespace UnityEngine.Perception.GroundTruth
             m_CurrentFrame = Time.frameCount;
         }
 
-        BoxData Convert(IdLabelEntry label, uint instanceId, Renderer renderer, OutputMode outputMode)
+        static BoxData Convert(IdLabelEntry label, uint instanceId, Vector3 center, Vector3 extents, Quaternion rotation, OutputMode outputMode)
         {
-            return outputMode == OutputMode.Kitti ? ConvertToKitti(label, instanceId, renderer) : ConvertToVerboseData(label, instanceId, renderer);
+            return outputMode == OutputMode.Kitti ?
+                ConvertToKitti(label, instanceId, center, extents, rotation) :
+                ConvertToVerboseData(label, instanceId, center, extents, rotation);
         }
 
-        BoxData ConvertToVerboseData(IdLabelEntry label, uint instanceId, Renderer renderer)
+        static BoxData ConvertToVerboseData(IdLabelEntry label, uint instanceId, Vector3 center, Vector3 extents, Quaternion rotation)
         {
-            var camTrans = perceptionCamera.transform;
-
-            var bounds = renderer.bounds;
-
-            var localCenter = camTrans.InverseTransformPoint(bounds.center);
-            var localRotation = Quaternion.Inverse(renderer.transform.rotation) * camTrans.rotation;
-
             return new VerboseData
             {
                 label_id = label.id,
                 label_name = label.label,
                 instance_id = instanceId,
-                translation = new float[] { localCenter.x, localCenter.y, localCenter.z },
-                size = new float[] { bounds.extents.x, bounds.extents.y, bounds.extents.z },
-                rotation = new float[] { localRotation.w, localRotation.x, localRotation.y, localRotation.z },
+                translation = new float[] { center.x, center.y, center.z },
+                size = new float[] { extents.x, extents.y, extents.z },
+                rotation = new float[] { rotation.x, rotation.y, rotation.z, rotation.w },
                 velocity = null,
                 acceleration = null
             };
         }
 
-        BoxData ConvertToKitti(IdLabelEntry label, uint instanceId, Renderer renderer)
+        static BoxData ConvertToKitti(IdLabelEntry label, uint instanceId, Vector3 center, Vector3 extents, Quaternion rotation)
         {
-            var camTrans = perceptionCamera.transform;
-
-            var bounds = renderer.bounds;
-
-            var localCenter = camTrans.InverseTransformPoint(bounds.center);
-            var localRotation = Quaternion.Inverse(renderer.transform.rotation) * camTrans.rotation;
-
             return new KittiData
             {
                 label_id = label.id,
                 label_name = label.label,
                 instance_id = instanceId,
-                translation = new float[] { localCenter.x, localCenter.y, localCenter.z },
-                size = new float[] { bounds.extents.x, bounds.extents.y, bounds.extents.z },
-                yaw = localRotation.eulerAngles.y,
+                translation = new float[] { center.x, center.y, center.z },
+                // unity stores bounds as half extents, kitti expects full values
+                size = new float[] { extents.x * 2, extents.y * 2, extents.z * 2 },
+                yaw = rotation.eulerAngles.y,
             };
         }
 
@@ -166,13 +157,134 @@ namespace UnityEngine.Perception.GroundTruth
         {
             using (s_BoundingBoxCallback.Auto())
             {
-                var renderer = labeling.gameObject.GetComponent<Renderer>();
+                var meshFilters = labeling.gameObject.GetComponentsInChildren<MeshFilter>();
 
-                if (renderer == null) return;
+                if (meshFilters == null || meshFilters.Length == 0) return;
 
                 if (idLabelConfig.TryGetLabelEntryFromInstanceId(groundTruthInfo.instanceId, out var labelEntry))
                 {
-                    m_BoundingBoxValues[m_CurrentIndex++] = Convert(labelEntry, groundTruthInfo.instanceId, renderer, mode);
+                    var camTrans = perceptionCamera.transform;
+                    var transform = labeling.transform;
+                    var bounds = new Bounds(Vector3.zero, Vector3.zero);
+                    var boundsUnset = true;
+
+                    foreach (var mesh in meshFilters)
+                    {
+                        var currentTransform = mesh.gameObject.transform;
+                        var targetTransform = labeling.transform;
+
+                        // Need to copy the bounds because we are going to move them, and do not want to change
+                        // the bounds of the mesh
+                        var meshBounds = mesh.mesh.bounds;
+                        var transformedBounds = new Bounds(meshBounds.center, meshBounds.size);
+
+                        var tmp = currentTransform.TransformPoint(bounds.center);
+                        var tmp2 = bounds.center + transform.position;
+                        var tmp3 = bounds.center + transform.localPosition;
+                        var tmp4 = tmp3 + labeling.transform.position;
+                        var tmp5 = tmp3 + labeling.transform.localPosition;
+#if false
+                        //transformedBounds.center += currentTransform.position;
+                        //transformedBounds.extents = Vector3.Scale(currentTransform.localScale, transformedBounds.extents);
+                        //transformedBounds.extents = currentTransform.rotation * transformedBounds.extents;
+                        transformedBounds.center = currentTransform.TransformPoint(transformedBounds.center);
+                        transformedBounds.extents = currentTransform.TransformVector(transformedBounds.extents);
+#else
+                        while (currentTransform != labeling.transform)
+                        {
+                            Debug.Log("P: " + currentTransform.position);
+
+                            transformedBounds.center += currentTransform.localPosition;
+                            //transformedBounds.extents = Vector3.Scale(currentTransform.localScale, transformedBounds.extents);
+                            //transformedBounds.extents = Quaternion.Inverse(currentTransform.rotation) * transformedBounds.extents;
+                            //transformedBounds.center = currentTransform.InverseTransformPoint(transformedBounds.center);
+                            //transformedBounds.extents = currentTransform.InverseTransformVector(transformedBounds.extents);
+                            //transformedBounds.center += currentTransform.Translate(transformedBounds.center);
+                            //transformedBounds.center = currentTransform.TransformPoint(transformedBounds.center);
+                            transformedBounds.extents = currentTransform.TransformVector(transformedBounds.extents);
+                            currentTransform = currentTransform.parent;
+                        }
+#endif
+                        if (boundsUnset)
+                        {
+                            bounds.center = transformedBounds.center;
+                            bounds.extents = transformedBounds.extents;
+                            boundsUnset = false;
+                        }
+                        else
+                            bounds.Encapsulate(transformedBounds);
+                    }
+
+
+
+                    // Need to transform our bounding box by the parent transform, but it should not be rotated, the bounding box should
+                    // always be in respect to local transform
+                    bounds.center = labeling.transform.TransformPoint(bounds.center);
+                    bounds.extents = Vector3.Scale(bounds.extents, labeling.transform.localScale);
+
+                    // Transform the points at the end...
+
+                    var center = bounds.center;
+                    var localRotation = Quaternion.Inverse(camTrans.rotation) * transform.rotation;
+                    var localCenter = camTrans.InverseTransformPoint(center);
+
+                    var converted = Convert(labelEntry, groundTruthInfo.instanceId, localCenter, bounds.extents, localRotation, mode);
+                    BoundingBoxComputed?.Invoke(m_CurrentFrame, converted);
+                    m_BoundingBoxValues[m_CurrentIndex++] = converted;
+                }
+            }
+        }
+
+        public void Working_OnUpdateEntity(Labeling labeling, GroundTruthInfo groundTruthInfo)
+        {
+            using (s_BoundingBoxCallback.Auto())
+            {
+                var meshFilters = labeling.gameObject.GetComponentsInChildren<MeshFilter>();
+
+                if (meshFilters == null || meshFilters.Length == 0) return;
+
+                if (idLabelConfig.TryGetLabelEntryFromInstanceId(groundTruthInfo.instanceId, out var labelEntry))
+                {
+                    var camTrans = perceptionCamera.transform;
+                    var transform = labeling.transform;
+                    var bounds = new Bounds(Vector3.zero, Vector3.zero);
+                    var boundsUnset = true;
+
+                    foreach (var mesh in meshFilters)
+                    {
+                        // Need to copy the bounds because we are going to move them, and do not want to change
+                        // the bounds of the mesh
+                        var meshBounds = mesh.mesh.bounds;
+                        var transformedBounds = new Bounds(meshBounds.center, meshBounds.size);
+
+                        // Only transform meshes that are not a part of the parent transform...
+                        if (mesh.gameObject != labeling.gameObject)
+                        {
+                            // Properly get the bounds of the mesh with respect to its parent.
+                            var meshTrans = mesh.gameObject.transform;
+                            transformedBounds.center += meshTrans.localPosition;
+                            transformedBounds.extents = Vector3.Scale(meshTrans.localScale, transformedBounds.extents);
+                            transformedBounds.extents = meshTrans.localRotation * transformedBounds.extents;
+                        }
+
+                        if (boundsUnset)
+                        {
+                            bounds.center = transformedBounds.center;
+                            bounds.extents = transformedBounds.extents;
+                            boundsUnset = false;
+                        }
+                        else
+                            bounds.Encapsulate(transformedBounds);
+                    }
+
+                    var center = transform.position + bounds.center;
+                    var localRotation = Quaternion.Inverse(transform.rotation) * camTrans.rotation;
+                    var localCenter = camTrans.InverseTransformPoint(center);
+                    var extents =  Vector3.Scale(transform.localScale,bounds.extents);
+
+                    var converted = Convert(labelEntry, groundTruthInfo.instanceId, localCenter, extents, localRotation, mode);
+                    BoundingBoxComputed?.Invoke(m_CurrentFrame, converted);
+                    m_BoundingBoxValues[m_CurrentIndex++] = converted;
                 }
             }
         }
