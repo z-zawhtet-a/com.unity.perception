@@ -22,14 +22,14 @@ namespace RandomizationTests
             Object.DestroyImmediate(m_TestObject);
         }
 
-        [Test]
-        public void CheckForParametersWithSameNameTest()
-        {
-            var config = m_TestObject.AddComponent<ParameterList>();
-            config.AddParameter<FloatParameter>("SameName");
-            config.AddParameter<BooleanParameter>("SameName");
-            Assert.Throws<ParameterListException>(() => config.Validate());
-        }
+        // [Test]
+        // public void CheckForParametersWithSameNameTest()
+        // {
+        //     var config = m_TestObject.AddComponent<ParameterList>();
+        //     config.AddParameter<FloatParameter>("SameName");
+        //     config.AddParameter<BooleanParameter>("SameName");
+        //     Assert.Throws<ParameterListException>(() => config.Validate());
+        // }
 
         [Test]
         public void AddingNonParameterTypesTest()

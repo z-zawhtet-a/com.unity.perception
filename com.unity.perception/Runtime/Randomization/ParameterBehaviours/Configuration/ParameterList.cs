@@ -15,17 +15,17 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
     {
         [SerializeReference] internal List<ParameterListItem> configuredParameters = new List<ParameterListItem>();
 
-        /// <summary>
-        /// The parameters contained within this ParameterList
-        /// </summary>
-        public override IEnumerable<Parameter> parameters
-        {
-            get
-            {
-                foreach (var configParameter in configuredParameters)
-                    yield return configParameter.parameter;
-            }
-        }
+        // /// <summary>
+        // /// The parameters contained within this ParameterList
+        // /// </summary>
+        // public override IEnumerable<Parameter> parameters
+        // {
+        //     get
+        //     {
+        //         foreach (var configParameter in configuredParameters)
+        //             yield return configParameter.parameter;
+        //     }
+        // }
 
         internal ParameterListItem AddParameter<T>(string parameterName) where T : Parameter, new()
         {
@@ -98,21 +98,21 @@ namespace UnityEngine.Perception.Randomization.ParameterBehaviours
                     configParameter.ApplyToTarget();
         }
 
-        /// <summary>
-        /// Validates the settings of each parameter within this ParameterList
-        /// </summary>
-        /// <exception cref="ParameterListException"></exception>
-        public override void Validate()
-        {
-            var parameterNames = new HashSet<string>();
-            foreach (var configParameter in configuredParameters)
-            {
-                if (parameterNames.Contains(configParameter.name))
-                    throw new ParameterListException(
-                        $"Two or more parameters cannot share the same name (\"{configParameter.name}\")");
-                parameterNames.Add(configParameter.name);
-                configParameter.Validate();
-            }
-        }
+        // /// <summary>
+        // /// Validates the settings of each parameter within this ParameterList
+        // /// </summary>
+        // /// <exception cref="ParameterListException"></exception>
+        // public override void Validate()
+        // {
+        //     var parameterNames = new HashSet<string>();
+        //     foreach (var configParameter in configuredParameters)
+        //     {
+        //         if (parameterNames.Contains(configParameter.name))
+        //             throw new ParameterListException(
+        //                 $"Two or more parameters cannot share the same name (\"{configParameter.name}\")");
+        //         parameterNames.Add(configParameter.name);
+        //         configParameter.Validate();
+        //     }
+        // }
     }
 }

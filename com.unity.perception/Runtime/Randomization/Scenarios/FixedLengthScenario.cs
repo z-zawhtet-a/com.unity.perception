@@ -40,7 +40,10 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         public override bool isScenarioComplete => currentIteration >= constants.totalIterations;
 
-        void Awake()
+        /// <summary>
+        /// Fast forwards the current scenario iteration to the starting iteration indicated in this scenario's constants
+        /// </summary>
+        protected override void OnAwake()
         {
             currentIteration = constants.startingIteration;
         }

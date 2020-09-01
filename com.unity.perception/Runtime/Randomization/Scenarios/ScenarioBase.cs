@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Randomization.ParameterBehaviours;
 using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
+using UnityEngine.Perception.Randomization.Parameters;
 
 namespace UnityEngine.Perception.Randomization.Scenarios
 {
@@ -14,11 +16,24 @@ namespace UnityEngine.Perception.Randomization.Scenarios
     public abstract class ScenarioBase : MonoBehaviour
     {
         static ScenarioBase s_ActiveScenario;
+
+        List<ParameterBehaviour> m_Behaviours = new List<ParameterBehaviour>();
+        List<Parameter> m_Parameters = new List<Parameter>();
         bool m_SkipFrame = true;
         bool m_FirstScenarioFrame = true;
         bool m_WaitingForFinalUploads;
 
-        [SerializeReference] public ParameterAsset[] parameters;
+        IEnumerable<ParameterBehaviour> m_ActiveBehaviours
+        {
+            get
+            {
+                foreach (var behaviour in m_Behaviours)
+                    if (behaviour.enabled)
+                        yield return behaviour;
+            }
+        }
+
+        [SerializeReference] public ParameterAsset[] parameterAssets;
 
         /// <summary>
         /// If true, this scenario will quit the Unity application when it's finished executing
@@ -38,7 +53,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// <summary>
         /// Returns the active parameter scenario in the scene
         /// </summary>
-        public static ScenarioBase ActiveScenario
+        public static ScenarioBase activeScenario
         {
             get => s_ActiveScenario;
             private set
@@ -90,14 +105,28 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         public abstract void Deserialize();
 
+        /// <summary>
+        /// This method executed directly after this scenario has been registered and initialized
+        /// </summary>
+        protected virtual void OnAwake() { }
+
         void Awake()
         {
-            ActiveScenario = this;
+            activeScenario = this;
+            foreach (var asset in parameterAssets)
+            {
+                foreach (var parameter in asset.parameters)
+                {
+                    parameter.Validate();
+                    m_Parameters.Add(parameter);
+                }
+            }
+            OnAwake();
         }
 
         void OnEnable()
         {
-            ActiveScenario = this;
+            activeScenario = this;
         }
 
         void OnDisable()
@@ -109,7 +138,6 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         {
             if (deserializeOnStart)
                 Deserialize();
-            ParameterBehaviour.activeBehaviour.Validate();
         }
 
         void Update()
@@ -149,14 +177,16 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 {
                     currentIteration++;
                     currentIterationFrame = 0;
-                    ParameterBehaviour.activeBehaviour.OnIterationEnd();
+                    foreach (var behaviour in m_ActiveBehaviours)
+                        behaviour.OnIterationEnd();
                 }
             }
 
             // Quit if scenario is complete
             if (isScenarioComplete)
             {
-                ParameterBehaviour.activeBehaviour.OnScenarioComplete();
+                foreach (var behaviour in m_ActiveBehaviours)
+                    behaviour.OnScenarioComplete();
                 Manager.Instance.Shutdown();
                 DatasetCapture.ResetSimulation();
                 m_WaitingForFinalUploads = true;
@@ -167,12 +197,52 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             if (currentIterationFrame == 0)
             {
                 DatasetCapture.StartNewSequence();
-                ParameterBehaviour.activeBehaviour.ResetParameterRandomStates();
-                ParameterBehaviour.activeBehaviour.OnIterationStart();
+                foreach (var parameter in m_Parameters)
+                {
+                    parameter.ResetState();
+                    parameter.IterateState(currentIteration);
+                }
+                foreach (var behaviour in m_ActiveBehaviours)
+                    behaviour.OnIterationStart();
             }
 
             // Perform new frame tasks
-            ParameterBehaviour.activeBehaviour.OnFrameStart();
+            foreach (var behaviour in m_ActiveBehaviours)
+                behaviour.OnFrameStart();
+        }
+
+        public T GetParameterAsset<T>() where T : ParameterAsset
+        {
+            foreach (var asset in parameterAssets)
+                if (asset is T typedAsset)
+                    return typedAsset;
+            throw new ScenarioException($"A ParameterAsset of type {typeof(T).Name} was not added to this scenario");
+        }
+
+        public T GetParameterBehaviour<T>() where T : ParameterBehaviour
+        {
+            foreach (var behaviour in m_Behaviours)
+                if (behaviour is T typedBehaviour)
+                    return typedBehaviour;
+            throw new ScenarioException($"A ParameterBehaviour of type {typeof(T).Name} was not added to this scenario");
+        }
+
+        internal void AddBehaviour<T>(T newBehaviour) where T : ParameterBehaviour
+        {
+            foreach (var behaviour in m_Behaviours)
+                if (behaviour.GetType() == newBehaviour.GetType())
+                    throw new ScenarioException(
+                        $"Two ParameterBehaviours of the same type {typeof(T).Name} cannot both be active simultaneously");
+            m_Behaviours.Add(newBehaviour);
+            m_Behaviours.Sort((b1, b2) => b1.executionPriority.CompareTo(b2.executionPriority));
+        }
+
+        internal void RemoveBehaviour(ParameterBehaviour behaviour)
+        {
+            var removed = m_Behaviours.Remove(behaviour);
+            if (!removed)
+                throw new ScenarioException(
+                    $"No active ParameterBehaviour of type {behaviour.GetType().Name} could be removed");
         }
     }
 }
