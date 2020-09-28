@@ -13,12 +13,14 @@ The Perception package provides a toolkit for generating large-scale datasets fo
 > com.unity.perception is in active development. Its features and API are subject to significant change as development progresses.
 
 
-## Documenation 
+## Documentation 
 [Installation instructions](com.unity.perception/Documentation~/SetupSteps.md)
 
 [Setting up your first perception scene](com.unity.perception/Documentation~/GettingStarted.md)
 
 [Perception manual](com.unity.perception/Documentation~/index.md)
+
+[Randomizing your simulation](com.unity.perception/Documentation~/Randomization/Index.md)
 
 ## Local development
 The repository includes two projects for local development in `TestProjects` folder, one set up for HDRP and the other for URP.
@@ -31,3 +33,14 @@ For closest standards conformity and best experience overall, JetBrains Rider or
 
 ## License
 * [License](com.unity.perception/LICENSE.md)
+
+## Citation
+If you find this package useful, consider citing it using:
+```
+@misc{com.unity.perception2020,
+    title={Unity {P}erception Package},
+    author={{Unity Technologies}},
+    howpublished={\url{https://github.com/Unity-Technologies/com.unity.perception}},
+    year={2020}
+}
+```

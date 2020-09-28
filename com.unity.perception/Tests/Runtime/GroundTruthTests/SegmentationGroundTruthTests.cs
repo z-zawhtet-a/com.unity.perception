@@ -1,14 +1,21 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
 using UnityEngine.Rendering;
+
 #if HDRP_PRESENT
+    using UnityEngine.Rendering.HighDefinition;
+#elif URP_PRESENT
+    using UnityEngine.Rendering.Universal;
 #endif
+
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
@@ -126,6 +133,91 @@ namespace GroundTruthTests
             Assert.AreEqual(4, timesSegmentationImageReceived);
         }
 
+        // Lens Distortion is only applicable in URP or HDRP pipelines
+        // As such, this test will always fail if URP or HDRP are not present (and also not really compile either)
+#if HDRP_PRESENT || URP_PRESENT
+        [UnityTest]
+        public IEnumerator SemanticSegmentationPass_WithLensDistortion()
+        {
+            GameObject cameraObject = null;
+            PerceptionCamera perceptionCamera;
+            bool fLensDistortionEnabled = false;
+            bool fDone = false;
+            int frames = 0;
+
+            var dataBBox = new uint[]
+            {
+                1, 1,
+                1, 1
+            };
+
+
+            Rect boundingBoxWithoutLensDistortion = new Rect();
+            Rect boundingBoxWithLensDistortion = new Rect();
+
+            void OnSegmentationImageReceived(int frameCount, NativeArray<uint> data, RenderTexture tex)
+            {
+                frames++;
+
+                if (frames < 10)
+                    return;
+
+                // Calculate the bounding box
+                if (fLensDistortionEnabled == false)
+                {
+                    fLensDistortionEnabled = true;
+
+                    var renderedObjectInfoGenerator = new RenderedObjectInfoGenerator();
+                    renderedObjectInfoGenerator.Compute(data, tex.width, BoundingBoxOrigin.TopLeft, out var boundingBoxes, Allocator.Temp);
+
+                    boundingBoxWithoutLensDistortion = boundingBoxes[0].boundingBox;
+
+                    // Add lens distortion
+                    perceptionCamera.OverrideLensDistortionIntensity(0.715f);
+
+                    frames = 0;
+                }
+                else
+                {
+                    var renderedObjectInfoGenerator = new RenderedObjectInfoGenerator();
+                    renderedObjectInfoGenerator.Compute(data, tex.width, BoundingBoxOrigin.TopLeft, out var boundingBoxes, Allocator.Temp);
+
+                    boundingBoxWithLensDistortion = boundingBoxes[0].boundingBox;
+
+                    Assert.AreNotEqual(boundingBoxWithoutLensDistortion, boundingBoxWithLensDistortion);
+                    Assert.Greater(boundingBoxWithLensDistortion.width, boundingBoxWithoutLensDistortion.width);
+
+                    fDone = true;
+                }
+            }
+
+            cameraObject = SetupCamera(out perceptionCamera, false);
+            perceptionCamera.InstanceSegmentationImageReadback += OnSegmentationImageReceived;
+            cameraObject.SetActive(true);
+
+            // Put a plane in front of the camera
+            var planeObject = GameObject.CreatePrimitive(PrimitiveType.Plane);
+
+            planeObject.transform.SetPositionAndRotation(new Vector3(0, 0, 10), Quaternion.Euler(90, 0, 0));
+            planeObject.transform.localScale = new Vector3(0.1f, -1, 0.1f);
+            var labeling = planeObject.AddComponent<Labeling>();
+            labeling.labels.Add("label");
+
+            AddTestObjectForCleanup(planeObject);
+
+            perceptionCamera.OverrideLensDistortionIntensity(0.5f);
+
+            while (fDone != true)
+            {
+                yield return null;
+            }
+
+            // Destroy the object to force all pending segmented image readbacks to finish and events to be fired.
+            DestroyTestObject(cameraObject);
+            DestroyTestObject(planeObject);
+        }
+#endif // ! HDRP_PRESENT || URP_PRESENT
+
         [UnityTest]
 #if SIMULATION_TOOLS_PRESENT
         [Unity.Simulation.Tools.CloudTest]
@@ -211,15 +303,70 @@ namespace GroundTruthTests
             AddTestObjectForCleanup(TestHelper.CreateLabeledPlane());
 
             yield return null;
-            //NativeArray<Color32> readbackArray = new NativeArray<Color32>(targetTextureOverride.width * targetTextureOverride.height, Allocator.Temp);
-            var request = AsyncGPUReadback.Request(targetTextureOverride, callback: r =>
+            TestHelper.ReadRenderTextureRawData<Color32>(targetTextureOverride, data =>
             {
-                CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, targetTextureOverride.width * targetTextureOverride.height), r.GetData<Color32>());
+                CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, targetTextureOverride.width * targetTextureOverride.height), data);
             });
-            AsyncGPUReadback.WaitAllRequests();
-            //request.WaitForCompletion();
-            Assert.IsTrue(request.done);
-            Assert.IsFalse(request.hasError);
+        }
+
+
+        [UnityTest]
+        public IEnumerator SemanticSegmentationPass_WithMultiMaterial_ProducesCorrectValues([Values(true, false)] bool showVisualizations)
+        {
+            int timesSegmentationImageReceived = 0;
+            var expectedPixelValue = k_SemanticPixelValue;
+            void OnSegmentationImageReceived(NativeArray<Color32> data)
+            {
+                timesSegmentationImageReceived++;
+                CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, data.Length), data);
+            }
+
+            var cameraObject = SetupCameraSemanticSegmentation(a => OnSegmentationImageReceived(a.data), false);
+
+            var plane = TestHelper.CreateLabeledPlane();
+            var meshRenderer = plane.GetComponent<MeshRenderer>();
+            var baseMaterial = meshRenderer.material;
+            meshRenderer.materials = new[] { baseMaterial, baseMaterial };
+            MaterialPropertyBlock mpb = new MaterialPropertyBlock();
+            mpb.SetFloat("float", 1f);
+            for (int i = 0; i < 2; i++)
+            {
+                meshRenderer.SetPropertyBlock(mpb, i);
+            }
+            AddTestObjectForCleanup(plane);
+            yield return null;
+            //destroy the object to force all pending segmented image readbacks to finish and events to be fired.
+            DestroyTestObject(cameraObject);
+            Assert.AreEqual(1, timesSegmentationImageReceived);
+        }
+
+
+        [UnityTest]
+        public IEnumerator SemanticSegmentationPass_WithChangingLabeling_ProducesCorrectValues([Values(true, false)] bool showVisualizations)
+        {
+            int timesSegmentationImageReceived = 0;
+            var expectedPixelValue = k_SemanticPixelValue;
+            void OnSegmentationImageReceived(NativeArray<Color32> data)
+            {
+                if (timesSegmentationImageReceived == 1)
+                {
+                    CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, data.Length), data);
+                }
+                timesSegmentationImageReceived++;
+            }
+
+            var cameraObject = SetupCameraSemanticSegmentation(a => OnSegmentationImageReceived(a.data), false);
+
+            var plane = TestHelper.CreateLabeledPlane(label: "non-matching");
+            AddTestObjectForCleanup(plane);
+            yield return null;
+            var labeling = plane.GetComponent<Labeling>();
+            labeling.labels = new List<string> { "label" };
+            labeling.RefreshLabeling();
+            yield return null;
+            //destroy the object to force all pending segmented image readbacks to finish and events to be fired.
+            DestroyTestObject(cameraObject);
+            Assert.AreEqual(2, timesSegmentationImageReceived);
         }
 
         [UnityTest]

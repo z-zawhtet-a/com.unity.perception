@@ -15,6 +15,13 @@ namespace UnityEngine.Perception.GroundTruth
     [Serializable]
     public sealed class RenderedObjectInfoLabeler : CameraLabeler
     {
+        ///<inheritdoc/>
+        public override string description
+        {
+            get => "Produces label id, instance id, and visible pixel count in a single metric each frame for each object which takes up one or more pixels in the camera's frame, based on this labeler's associated label configuration.";
+            protected set {}
+        }
+
         // ReSharper disable InconsistentNaming
         struct RenderedObjectInfoValue
         {
@@ -43,8 +50,6 @@ namespace UnityEngine.Perception.GroundTruth
         RenderedObjectInfoValue[] m_VisiblePixelsValues;
         Dictionary<int, AsyncMetric> m_ObjectInfoAsyncMetrics;
         MetricDefinition m_RenderedObjectInfoMetricDefinition;
-
-        List<string> vizEntries = null;
 
         /// <summary>
         /// Creates a new RenderedObjectInfoLabeler. Be sure to assign <see cref="idLabelConfig"/> before adding to a <see cref="PerceptionCamera"/>.
@@ -108,10 +113,6 @@ namespace UnityEngine.Perception.GroundTruth
                     m_VisiblePixelsValues = new RenderedObjectInfoValue[renderedObjectInfos.Length];
 
                 bool visualize = visualizationEnabled;
-                if (visualize && vizEntries == null)
-                {
-                    vizEntries = new List<string>();
-                }
 
                 for (var i = 0; i < renderedObjectInfos.Length; i++)
                 {
@@ -129,9 +130,7 @@ namespace UnityEngine.Perception.GroundTruth
                     if (visualize)
                     {
                         var label = labelEntry.label + "_" + objectInfo.instanceId;
-
-                        hudPanel.UpdateEntry(label, objectInfo.pixelCount.ToString());
-                        vizEntries.Add(label);
+                        hudPanel.UpdateEntry(this, label, objectInfo.pixelCount.ToString());
                     }
                 }
 
@@ -139,27 +138,16 @@ namespace UnityEngine.Perception.GroundTruth
             }
         }
 
-
-
         bool TryGetLabelEntryFromInstanceId(uint instanceId, out IdLabelEntry labelEntry)
         {
             return idLabelConfig.TryGetLabelEntryFromInstanceId(instanceId, out labelEntry);
         }
 
         /// <inheritdoc/>
-        protected override void PopulateVisualizationPanel(ControlPanel panel)
+        protected override void OnVisualizerEnabledChanged(bool enabled)
         {
-            panel.AddToggleControl("Pixel Counts", enabled => { visualizationEnabled = enabled; });
-        }
-
-        /// <inheritdoc/>
-        override protected void OnVisualizerEnabledChanged(bool enabled)
-        {
-            if (!enabled)
-            {
-                hudPanel.RemoveEntries(vizEntries);
-                vizEntries.Clear();
-            }
+            if (enabled) return;
+            hudPanel.RemoveEntries(this);
         }
     }
 }

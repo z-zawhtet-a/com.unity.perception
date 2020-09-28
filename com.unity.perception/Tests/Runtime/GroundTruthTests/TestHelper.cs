@@ -1,5 +1,9 @@
 using System;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Perception.GroundTruth;
 
 namespace GroundTruthTests
@@ -17,6 +21,21 @@ namespace GroundTruthTests
             return planeObject;
         }
 
+        public static void ReadRenderTextureRawData<T>(RenderTexture renderTexture, Action<NativeArray<T>> callback) where T : struct
+        {
+            RenderTexture.active = renderTexture;
+
+            var cpuTexture = new Texture2D(renderTexture.width, renderTexture.height, renderTexture.graphicsFormat, TextureCreationFlags.None);
+
+            cpuTexture.ReadPixels(new Rect(
+                    Vector2.zero,
+                    new Vector2(renderTexture.width, renderTexture.height)),
+                0, 0);
+            RenderTexture.active = null;
+            var data = cpuTexture.GetRawTextureData<T>();
+            callback(data);
+        }
+
 #if UNITY_EDITOR
         public static void LoadAndStartRenderDocCapture(out UnityEditor.EditorWindow gameView)
         {
@@ -28,8 +47,11 @@ namespace GroundTruthTests
         }
 
 #endif
-        public static string NormalizeJson(string json)
+        public static string NormalizeJson(string json, bool normalizeFormatting = false)
         {
+            if (normalizeFormatting)
+                json = Regex.Replace(json, "^\\s*", "", RegexOptions.Multiline);
+
             return json.Replace("\r\n", "\n");
         }
     }

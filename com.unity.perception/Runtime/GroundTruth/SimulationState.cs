@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using Unity.Collections;
+using Unity.Mathematics;
+using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -13,8 +16,6 @@ namespace UnityEngine.Perception.GroundTruth
 {
     partial class SimulationState
     {
-        public string OutputDirectory { get; }
-
         HashSet<SensorHandle> m_ActiveSensors = new HashSet<SensorHandle>();
         Dictionary<SensorHandle, SensorData> m_Sensors = new Dictionary<SensorHandle, SensorData>();
         HashSet<EgoHandle> m_Egos = new HashSet<EgoHandle>();
@@ -46,8 +47,21 @@ namespace UnityEngine.Perception.GroundTruth
         CustomSampler m_SerializeMetricsAsyncSampler = CustomSampler.Create("SerializeMetricsAsync");
         CustomSampler m_GetOrCreatePendingCaptureForThisFrameSampler = CustomSampler.Create("GetOrCreatePendingCaptureForThisFrame");
         float m_LastTimeScale;
+        readonly string m_OutputDirectoryName;
+        string m_OutputDirectoryPath;
 
         public bool IsRunning { get; private set; }
+
+        public string OutputDirectory
+        {
+            get
+            {
+                if (m_OutputDirectoryPath == null)
+                    m_OutputDirectoryPath = Manager.Instance.GetDirectoryFor(m_OutputDirectoryName);
+
+                return m_OutputDirectoryPath;
+            }
+        }
 
         //A sensor will be triggered if sequenceTime is within includeThreshold seconds of the next trigger
         const float k_IncludeInFrameThreshold = .01f;
@@ -57,7 +71,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         public SimulationState(string outputDirectory)
         {
-            OutputDirectory = outputDirectory;
+            m_OutputDirectoryName = outputDirectory;
             IsRunning = true;
         }
 
@@ -286,6 +300,8 @@ namespace UnityEngine.Perception.GroundTruth
             }
         }
 
+        public string GetOutputDirectoryNoCreate() => Path.Combine(Configuration.Instance.GetStoragePath(), m_OutputDirectoryName);
+
         void EnsureSequenceTimingsUpdated()
         {
             if (!m_HasStarted)
@@ -363,10 +379,10 @@ namespace UnityEngine.Perception.GroundTruth
 
         float SequenceTimeOfNextCapture(SensorData sensorData)
         {
+            // If the first capture hasn't happened yet, sequenceTimeNextCapture field won't be valid
             if (sensorData.firstCaptureTime >= UnscaledSequenceTime)
                 return sensorData.firstCaptureTime;
-
-            return sensorData.period - (UnscaledSequenceTime - sensorData.firstCaptureTime) % sensorData.period;
+            return sensorData.sequenceTimeNextCapture;
         }
 
         public bool Contains(Guid id) => m_Ids.Contains(id);
@@ -417,13 +433,12 @@ namespace UnityEngine.Perception.GroundTruth
                 if (!activeSensor.ShouldCaptureThisFrame)
                     continue;
 
-                //Just in case we get in a situation where we are so far beyond sequenceTimeNextCapture that incrementing next time by the period still doesn't get us to a time past "now"
-                do
-                {
-                    sensorData.sequenceTimeNextCapture += sensorData.period;
-                }
-                while (sensorData.sequenceTimeNextCapture <= UnscaledSequenceTime);
-
+                // TODO: AISV-845 This is an errant modification of this record that can lead to undefined behavior
+                // Leaving as-is for now because too many components depend on this logic
+                sensorData.sequenceTimeNextCapture += sensorData.period;
+                Debug.Assert(sensorData.sequenceTimeNextCapture > UnscaledSequenceTime,
+                    $"Next scheduled capture should be after {UnscaledSequenceTime} but is {sensorData.sequenceTimeNextCapture}");
+                // sensorData.sequenceTimeNextCapture = SequenceTimeOfNextCapture(sensorData);
                 sensorData.lastCaptureFrameCount = Time.frameCount;
                 m_Sensors[activeSensor] = sensorData;
             }
@@ -591,29 +606,47 @@ namespace UnityEngine.Perception.GroundTruth
             return new AsyncAnnotation(ReportAnnotationFile(annotationDefinition, sensorHandle, null), this);
         }
 
-        public void ReportAsyncAnnotationResult<T>(AsyncAnnotation asyncAnnotation, string filename = null, T[] values = null)
+        public void ReportAsyncAnnotationResult<T>(AsyncAnnotation asyncAnnotation, string filename = null, NativeSlice<T> values = default) where T : struct
+        {
+            var jArray = new JArray();
+            foreach (var value in values)
+                jArray.Add(new JRaw(DatasetJsonUtility.ToJToken(value)));
+
+            ReportAsyncAnnotationResult<T>(asyncAnnotation, filename, jArray);
+        }
+
+        public void ReportAsyncAnnotationResult<T>(AsyncAnnotation asyncAnnotation, string filename = null, IEnumerable<T> values = null)
+        {
+            var jArray = values == null ? null : JArray.FromObject(values);
+
+            ReportAsyncAnnotationResult<T>(asyncAnnotation, filename, jArray);
+        }
+
+        void ReportAsyncAnnotationResult<T>(AsyncAnnotation asyncAnnotation, string filename, JArray jArray)
         {
             if (!asyncAnnotation.IsPending)
                 throw new InvalidOperationException("AsyncAnnotation has already been reported and cannot be reported again.");
 
             PendingCapture pendingCapture = null;
+            int annotationIndex = -1;
             foreach (var c in m_PendingCaptures)
             {
                 if (c.Step == asyncAnnotation.Annotation.Step && c.SensorHandle == asyncAnnotation.Annotation.SensorHandle)
                 {
                     pendingCapture = c;
-                    break;
+                    annotationIndex = pendingCapture.Annotations.FindIndex(a => a.Item1.Equals(asyncAnnotation.Annotation));
+                    if (annotationIndex != -1)
+                        break;
                 }
             }
 
-            Debug.Assert(pendingCapture != null);
+            Debug.Assert(pendingCapture != null && annotationIndex != -1);
 
-            var annotationIndex = pendingCapture.Annotations.FindIndex(a => a.Item1.Equals(asyncAnnotation.Annotation));
             var annotationTuple = pendingCapture.Annotations[annotationIndex];
             var annotationData = annotationTuple.Item2;
 
             annotationData.Path = filename;
-            annotationData.ValuesJson = values == null ? null : JArray.FromObject(values);
+            annotationData.ValuesJson = jArray;
 
             annotationTuple.Item2 = annotationData;
             pendingCapture.Annotations[annotationIndex] = annotationTuple;

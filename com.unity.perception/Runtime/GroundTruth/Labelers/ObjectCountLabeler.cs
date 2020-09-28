@@ -13,6 +13,13 @@ namespace UnityEngine.Perception.GroundTruth
     [Serializable]
     public sealed class ObjectCountLabeler : CameraLabeler
     {
+        ///<inheritdoc/>
+        public override string description
+        {
+            get => "Produces object counts for each label defined in this labeler's associated label configuration.";
+            protected set {}
+        }
+
         /// <summary>
         /// The ID to use for object count annotations in the resulting dataset
         /// </summary>
@@ -37,8 +44,6 @@ namespace UnityEngine.Perception.GroundTruth
 
         Dictionary<int, AsyncMetric> m_ObjectCountAsyncMetrics;
         MetricDefinition m_ObjectCountMetricDefinition;
-
-        List<string> vizEntries = null;
 
         /// <summary>
         /// Creates a new ObjectCountLabeler. This constructor should only be used by serialization. For creation from
@@ -130,10 +135,6 @@ namespace UnityEngine.Perception.GroundTruth
                     m_ClassCountValues = new ClassCountValue[entries.Count];
 
                 bool visualize = visualizationEnabled;
-                if (visualize && vizEntries == null)
-                {
-                    vizEntries = new List<string>();
-                }
 
                 for (var i = 0; i < entries.Count; i++)
                 {
@@ -147,9 +148,9 @@ namespace UnityEngine.Perception.GroundTruth
                     if (visualize)
                     {
                         var label = entries[i].label + " Counts";
+                        hudPanel.UpdateEntry(this, label, counts[i].ToString());
 
-                        hudPanel.UpdateEntry(label, counts[i].ToString());
-                        vizEntries.Add(label);
+
                     }
                 }
 
@@ -158,19 +159,10 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         /// <inheritdoc/>
-        protected override void PopulateVisualizationPanel(ControlPanel panel)
+        protected override void OnVisualizerEnabledChanged(bool enabled)
         {
-            panel.AddToggleControl("Object Counts", enabled => { visualizationEnabled = enabled; });
-        }
-
-        /// <inheritdoc/>
-        override protected void OnVisualizerEnabledChanged(bool enabled)
-        {
-            if (!enabled)
-            {
-                hudPanel.RemoveEntries(vizEntries);
-                vizEntries.Clear();
-            }
+            if (enabled) return;
+            hudPanel.RemoveEntries(this);
         }
     }
 }
