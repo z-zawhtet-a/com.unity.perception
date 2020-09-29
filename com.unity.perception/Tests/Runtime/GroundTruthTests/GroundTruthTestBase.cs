@@ -14,6 +14,7 @@ namespace GroundTruthTests
         [TearDown]
         public void TearDown()
         {
+            Debug.Log("Teardown called!");
             foreach (var o in m_ObjectsToDestroy)
                 Object.DestroyImmediate(o);
 

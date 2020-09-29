@@ -11,7 +11,7 @@ namespace GroundTruthTests
 {
     // Provides accessors and invocation methods for members of SimulationState that would otherwise be in-accessible
     // due to protection level - use only when testing protected logic is critical
-    class SimulationStateTestHelper
+    class SimulationStateTestHelper : GroundTruthTestBase
     {
         SimulationState m_State => DatasetCapture.SimulationState;
         Dictionary<SensorHandle, SimulationState.SensorData> m_SensorsReference;
@@ -50,11 +50,13 @@ namespace GroundTruthTests
             m_TestHelper = new SimulationStateTestHelper();
         }
 
-        [TearDown]
-        public void TearDown()
+        [UnityTearDown]
+        public IEnumerator TearDown()
         {
             Time.timeScale = 1;
             DatasetCapture.ResetSimulation();
+            yield return null;
+            Debug.Log("Simulation Reset and finished all async requests!");
         }
 
         [UnityTest]
