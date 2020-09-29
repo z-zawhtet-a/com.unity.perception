@@ -56,9 +56,7 @@ namespace GroundTruthTests
         {
             Time.timeScale = 1;
             DatasetCapture.ResetSimulation();
-            yield return null;
-            if (Directory.Exists(DatasetCapture.OutputDirectory))
-                Directory.Delete(DatasetCapture.OutputDirectory, true);
+            yield return new WaitForSeconds(2);
             Debug.Log("Simulation Reset and finished all async requests!");
         }
 
