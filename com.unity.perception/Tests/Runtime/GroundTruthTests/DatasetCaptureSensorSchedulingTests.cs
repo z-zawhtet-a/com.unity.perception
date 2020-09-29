@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
@@ -56,6 +57,8 @@ namespace GroundTruthTests
             Time.timeScale = 1;
             DatasetCapture.ResetSimulation();
             yield return null;
+            if (Directory.Exists(DatasetCapture.OutputDirectory))
+                Directory.Delete(DatasetCapture.OutputDirectory, true);
             Debug.Log("Simulation Reset and finished all async requests!");
         }
 
