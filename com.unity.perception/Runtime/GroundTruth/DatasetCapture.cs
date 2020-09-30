@@ -181,7 +181,7 @@ namespace UnityEngine.Perception.GroundTruth
             var oldSimulationState = SimulationState;
             SimulationState = CreateSimulationData();
             oldSimulationState.End();
-            Manager.Instance.CompleteAllTrackedRequests();
+            //Manager.Instance.CompleteAllTrackedRequests();
         }
     }
 
