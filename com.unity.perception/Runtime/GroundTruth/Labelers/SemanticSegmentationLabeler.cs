@@ -36,7 +36,8 @@ namespace UnityEngine.Perception.GroundTruth
             protected set {}
         }
 
-        const string k_SemanticSegmentationDirectory = "SemanticSegmentation";
+        //const string k_SemanticSegmentationDirectory = "SemanticSegmentation";
+        string SemanticSegmentationDirectory => "SemanticSegmentation" + perceptionCamera.CameraGuid;
         const string k_SegmentationFilePrefix = "segmentation_";
 
         /// <summary>
@@ -169,7 +170,7 @@ namespace UnityEngine.Perception.GroundTruth
                 m_TargetTextureOverride = new RenderTexture(camWidth, camHeight, 8, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
 
             targetTexture.Create();
-            targetTexture.name = "Labeling";
+            targetTexture.name = "SemanticLabelerTexture_" + perceptionCamera.CameraGuid;
 
 #if HDRP_PRESENT
             var gameObject = perceptionCamera.gameObject;
@@ -226,8 +227,8 @@ namespace UnityEngine.Perception.GroundTruth
             if (!m_AsyncAnnotations.TryGetValue(frameCount, out var annotation))
                 return;
 
-            var datasetRelativePath = $"{k_SemanticSegmentationDirectory}/{k_SegmentationFilePrefix}{frameCount}.png";
-            var localPath = $"{Manager.Instance.GetDirectoryFor(k_SemanticSegmentationDirectory)}/{k_SegmentationFilePrefix}{frameCount}.png";
+            var datasetRelativePath = $"{SemanticSegmentationDirectory}/{k_SegmentationFilePrefix}{frameCount}.png";
+            var localPath = $"{Manager.Instance.GetDirectoryFor(SemanticSegmentationDirectory)}/{k_SegmentationFilePrefix}{frameCount}.png";
 
             annotation.ReportFile(datasetRelativePath);
 

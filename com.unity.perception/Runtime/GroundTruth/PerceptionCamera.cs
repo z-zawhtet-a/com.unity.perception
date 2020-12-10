@@ -24,7 +24,20 @@ namespace UnityEngine.Perception.GroundTruth
     public partial class PerceptionCamera : MonoBehaviour
     {
         //TODO: Remove the Guid path when we have proper dataset merging in Unity Simulation and Thea
-        internal static string RgbDirectory { get; } = $"RGB{Guid.NewGuid()}";
+
+        private string m_Guid = string.Empty;
+        public string RgbDirectory => $"RGB{CameraGuid}";
+        public string CameraGuid {
+            get
+            {
+                if (m_Guid == string.Empty)
+                {
+                    m_Guid = Guid.NewGuid().ToString();
+                }
+                return m_Guid;
+            }
+        }
+
         static string s_RgbFilePrefix = "rgb_";
 
         /// <summary>
@@ -44,11 +57,23 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         public bool captureRgbImages = true;
 
-        Camera m_AttachedCamera = null;
+        private Camera m_AttachedCamera = null;
+
         /// <summary>
         /// Caches access to the camera attached to the perception camera
         /// </summary>
-        public Camera attachedCamera => m_AttachedCamera;
+        public Camera attachedCamera
+        {
+            get
+            {
+                if (m_AttachedCamera == null)
+                {
+                    m_AttachedCamera = GetComponent<Camera>();
+                }
+
+                return m_AttachedCamera;
+            }
+        }
 
         /// <summary>
         /// Event invoked after the camera finishes rendering during a frame.
@@ -57,6 +82,8 @@ namespace UnityEngine.Perception.GroundTruth
         [SerializeReference]
         List<CameraLabeler> m_Labelers = new List<CameraLabeler>();
         Dictionary<string, object> m_PersistentSensorData = new Dictionary<string, object>();
+
+        private bool m_IsHighestDepthCamera;
 
         int m_LastFrameCaptured = -1;
 
@@ -130,12 +157,26 @@ namespace UnityEngine.Perception.GroundTruth
             AsyncRequest.maxAsyncRequestFrameAge = 4; // Ensure that readbacks happen before Allocator.TempJob allocations get stale
 
             SetupInstanceSegmentation();
-            m_AttachedCamera = GetComponent<Camera>();
 
-            SetupVisualizationCamera(m_AttachedCamera);
+            SetupVisualizationCamera(attachedCamera);
 
+            //AddTargetTextureIfMultiCam(attachedCamera);
 
             DatasetCapture.SimulationEnding += OnSimulationEnding;
+        }
+
+        void AddTargetTextureIfMultiCam(Camera cam)
+        {
+            var perceptionCams = FindObjectsOfType<PerceptionCamera>();
+            if (perceptionCams.Length > 1)
+            {
+                cam.targetTexture = RenderTexture.GetTemporary(cam.pixelWidth, cam.pixelHeight, 0, GraphicsFormat.R8G8B8A8_SRGB);
+                var maxDepth = perceptionCams.ToList().Max(c => c.attachedCamera.depth);
+                if (cam.depth == maxDepth)
+                {
+                    m_IsHighestDepthCamera = true;
+                }
+            }
         }
 
         void EnsureSensorRegistered()
@@ -185,7 +226,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         void CheckForRendererFeature(ScriptableRenderContext context, Camera camera)
         {
-            if (camera == m_AttachedCamera)
+            if (camera == attachedCamera)
             {
 #if URP_PRESENT
                 if (!m_GroundTruthRendererFeatureRun)
@@ -204,7 +245,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!SensorHandle.IsValid)
                 return;
 
-            m_AttachedCamera.enabled = SensorHandle.ShouldCaptureThisFrame;
+            attachedCamera.enabled = SensorHandle.ShouldCaptureThisFrame;
 
             bool anyVisualizing = false;
             foreach (var labeler in m_Labelers)
@@ -228,6 +269,11 @@ namespace UnityEngine.Perception.GroundTruth
 
             if (m_ShowingVisualizations)
                 CaptureOptions.useAsyncReadbackIfSupported = !anyVisualizing;
+
+            if (m_IsHighestDepthCamera)
+            {
+                Graphics.Blit(attachedCamera.targetTexture, null as RenderTexture);
+            }
         }
 
         private Vector2 scrollPosition;
@@ -403,11 +449,15 @@ namespace UnityEngine.Perception.GroundTruth
                 if (labeler.isInitialized)
                     labeler.InternalCleanup();
             }
+
+            var tmp = attachedCamera.targetTexture;
+            attachedCamera.targetTexture = null;
+            RenderTexture.ReleaseTemporary(tmp);
         }
 
         void OnBeginCameraRendering(ScriptableRenderContext _, Camera cam)
         {
-            if (cam != m_AttachedCamera)
+            if (cam != attachedCamera)
                 return;
             if (!SensorHandle.ShouldCaptureThisFrame)
                 return;

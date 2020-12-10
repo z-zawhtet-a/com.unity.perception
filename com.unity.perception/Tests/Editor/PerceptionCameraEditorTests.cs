@@ -22,7 +22,7 @@ namespace EditorTests
         public IEnumerator EditorPause_DoesNotLogErrors()
         {
             ResetScene();
-            SetupCamera(p =>
+            var pCamera = SetupCamera(p =>
             {
                 var idLabelConfig = ScriptableObject.CreateInstance<IdLabelConfig>();
                 p.captureRgbImages = true;
@@ -48,7 +48,7 @@ namespace EditorTests
             var capturesJson = File.ReadAllText(capturesPath);
             for (int iFrameCount = expectedFirstFrame; iFrameCount <= expectedLastFrame; iFrameCount++)
             {
-                var imagePath = $"{PerceptionCamera.RgbDirectory}/rgb_{iFrameCount}";
+                var imagePath = $"{pCamera.RgbDirectory}/rgb_{iFrameCount}";
                 StringAssert.Contains(imagePath, capturesJson);
             }
 
@@ -172,7 +172,7 @@ namespace EditorTests
         }
 #endif
 
-        static GameObject SetupCamera(Action<PerceptionCamera> initPerceptionCameraCallback)
+        static PerceptionCamera SetupCamera(Action<PerceptionCamera> initPerceptionCameraCallback)
         {
             var cameraObject = new GameObject();
             cameraObject.SetActive(false);
@@ -187,7 +187,7 @@ namespace EditorTests
             initPerceptionCameraCallback?.Invoke(perceptionCamera);
 
             cameraObject.SetActive(true);
-            return cameraObject;
+            return perceptionCamera;
         }
     }
 }
