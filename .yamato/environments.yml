@@ -12,7 +12,7 @@ per_commit_editors:
 
 performance_editors:
   - version: 2019.4.16f1
-  - version: 2020.1.3f1
+# - version: 2020.1.3f1
 
 complete_editors:
   - version: 2019.4.16f1
