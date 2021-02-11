@@ -375,6 +375,48 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
+        public IEnumerator SegmentationPass_WithMultipleCameras_ProducesCorrectValues([Values(SegmentationKind.Instance, SegmentationKind.Semantic)] SegmentationKind segmentationKind)
+        {
+            int timesSegmentationImageReceivedCam1 = 0;
+            int timesSegmentationImageReceivedCam2 = 0;
+            object expectedPixelValue = segmentationKind == SegmentationKind.Instance ? (object) new Color32(255, 0, 0, 255) : k_SemanticPixelValue;
+
+            void OnSegmentationImageReceivedCam1(NativeArray<Color32> data)
+            {
+                CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, data.Length), data);
+                timesSegmentationImageReceivedCam1++;
+            }
+            void OnSegmentationImageReceivedCam2(NativeArray<Color32> data)
+            {
+                CollectionAssert.AreEqual(Enumerable.Repeat(expectedPixelValue, data.Length), data);
+                timesSegmentationImageReceivedCam2++;
+            }
+
+            GameObject cameraObject1 = null;
+            GameObject cameraObject2 = null;
+            switch (segmentationKind)
+            {
+                case SegmentationKind.Instance:
+                    cameraObject1 = SetupCameraSemanticSegmentation(a => OnSegmentationImageReceivedCam1(a.data), false);
+                    cameraObject2 = SetupCameraSemanticSegmentation(a => OnSegmentationImageReceivedCam2(a.data), false);
+                    break;
+                case SegmentationKind.Semantic:
+                    cameraObject1 = SetupCameraInstanceSegmentation((size, data, renderTexture) => OnSegmentationImageReceivedCam1(data));
+                    cameraObject2 = SetupCameraInstanceSegmentation((size, data, renderTexture) => OnSegmentationImageReceivedCam2(data));
+                    break;
+            }
+
+            var plane = TestHelper.CreateLabeledPlane();
+            AddTestObjectForCleanup(plane);
+            yield return null;
+            //destroy the object to force all pending segmented image readbacks to finish and events to be fired.
+            DestroyTestObject(cameraObject1);
+            DestroyTestObject(cameraObject2);
+            Assert.AreEqual(1, timesSegmentationImageReceivedCam1);
+            Assert.AreEqual(1, timesSegmentationImageReceivedCam2);
+        }
+
+        [UnityTest]
         public IEnumerator SegmentationPassProducesCorrectValuesEachFrame(
             [Values(SegmentationKind.Instance, SegmentationKind.Semantic)] SegmentationKind segmentationKind)
         {
