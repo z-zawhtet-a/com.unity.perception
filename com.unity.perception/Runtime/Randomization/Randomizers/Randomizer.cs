@@ -76,6 +76,8 @@ namespace UnityEngine.Perception.Randomization.Randomizers
         /// </summary>
         protected virtual void OnScenarioComplete() { }
 
+        protected virtual void OnScenarioStart() { }
+
         /// <summary>
         /// OnStartRunning is called on the first frame a Randomizer is enabled
         /// </summary>
@@ -91,6 +93,8 @@ namespace UnityEngine.Perception.Randomization.Randomizers
         /// </summary>
         protected virtual void OnUpdate() { }
 
+        public virtual void OnDrawGizmos() { }
+
         internal virtual void Create()
         {
             OnCreate();
@@ -104,6 +108,11 @@ namespace UnityEngine.Perception.Randomization.Randomizers
         internal virtual void IterationEnd()
         {
             OnIterationEnd();
+        }
+
+        internal virtual void ScenarioStart()
+        {
+            OnScenarioStart();
         }
 
         internal virtual void ScenarioComplete()

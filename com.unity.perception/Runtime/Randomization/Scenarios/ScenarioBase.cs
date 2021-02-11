@@ -212,6 +212,9 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                 Debug.Log($"No configuration file found at {defaultConfigFilePath}. " +
                     "Proceeding with built in scenario constants and randomizer settings.");
 #endif
+
+            foreach (var randomizer in activeRandomizers)
+                randomizer.ScenarioStart();
         }
 
         struct IterationMetricData
@@ -290,6 +293,14 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             // Perform new frame tasks
             foreach (var randomizer in activeRandomizers)
                 randomizer.Update();
+        }
+
+        void OnDrawGizmos()
+        {
+            foreach (var randomizer in activeRandomizers)
+            {
+                randomizer.OnDrawGizmos();
+            }
         }
 
         /// <summary>
