@@ -1,6 +1,7 @@
 #if HDRP_PRESENT
 
 using System;
+using System.Collections.Generic;
 using JetBrains.Annotations;
 using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.Rendering;
@@ -11,29 +12,20 @@ namespace UnityEngine.Perception.GroundTruth
     /// A CustomPass for creating object instance segmentation images. GameObjects containing Labeling components
     /// are assigned unique IDs, which are rendered into the target texture.
     /// </summary>
-    public class InstanceSegmentationPass : CustomPass
+    public class InstanceSegmentationPass : GroundTruthPass
     {
         InstanceSegmentationCrossPipelinePass m_InstanceSegmentationCrossPipelinePass;
-
-        public RenderTexture targetTexture;
-        public Camera targetCamera;
 
         [UsedImplicitly]
         public InstanceSegmentationPass()
         {}
 
-        protected override void Execute(ScriptableRenderContext renderContext, CommandBuffer cmd, HDCamera hdCamera, CullingResults cullingResult)
-        {
-            CoreUtils.SetRenderTarget(cmd, targetTexture, ClearFlag.All);
-            m_InstanceSegmentationCrossPipelinePass.Execute(renderContext, cmd, hdCamera.camera, cullingResult);
-        }
-
         public void EnsureInit()
         {
             if (m_InstanceSegmentationCrossPipelinePass == null)
             {
-                m_InstanceSegmentationCrossPipelinePass = new InstanceSegmentationCrossPipelinePass(targetCamera);
-                m_InstanceSegmentationCrossPipelinePass.Setup();
+                m_InstanceSegmentationCrossPipelinePass = new InstanceSegmentationCrossPipelinePass();
+                this.Init(m_InstanceSegmentationCrossPipelinePass);
             }
         }
 

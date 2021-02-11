@@ -28,7 +28,7 @@ namespace UnityEngine.Perception.GroundTruth
         {
             if (m_LensDistortionCrossPipelinePass == null)
             {
-                m_LensDistortionCrossPipelinePass = new LensDistortionCrossPipelinePass(targetCamera, targetTexture);
+                m_LensDistortionCrossPipelinePass = new LensDistortionCrossPipelinePass(targetTexture);
                 m_LensDistortionCrossPipelinePass.EnsureActivated();
             }
         }
@@ -48,6 +48,11 @@ namespace UnityEngine.Perception.GroundTruth
         {
             CoreUtils.SetRenderTarget(cmd, targetTexture);
             m_LensDistortionCrossPipelinePass.Execute(renderContext, cmd, hdCamera.camera, cullingResult);
+        }
+
+        public void AddTarget(Camera getComponent, RenderTexture mInstanceSegmentationTexture)
+        {
+
         }
     }
 }

@@ -25,14 +25,10 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// Create a new <see cref="InstanceSegmentationCrossPipelinePass"/> referencing the given
         /// </summary>
-        /// <param name="targetCamera"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public InstanceSegmentationCrossPipelinePass(Camera targetCamera)
-            : base(targetCamera)
+        public InstanceSegmentationCrossPipelinePass()
+            : base()
         {
-            if (targetCamera == null)
-                throw new ArgumentNullException(nameof(targetCamera));
-
             //Activating in the constructor allows us to get correct labeling in the first frame.
             EnsureActivated();
         }

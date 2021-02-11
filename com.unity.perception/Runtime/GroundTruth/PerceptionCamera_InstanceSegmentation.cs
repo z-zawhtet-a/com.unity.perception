@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -34,7 +35,7 @@ namespace UnityEngine.Perception.GroundTruth
 
 #if HDRP_PRESENT || URP_PRESENT
     #if HDRP_PRESENT
-        InstanceSegmentationPass m_InstanceSegmentationPass;
+        internal static GameObject s_CustomPassVolumeObject;
         LensDistortionPass m_LensDistortionPass;
     #elif URP_PRESENT
         InstanceSegmentationUrpPass m_InstanceSegmentationPass;
@@ -59,25 +60,39 @@ namespace UnityEngine.Perception.GroundTruth
             m_RenderedObjectInfoGenerator = new RenderedObjectInfoGenerator();
 
 #if HDRP_PRESENT
-            var customPassVolume = this.GetComponent<CustomPassVolume>() ?? gameObject.AddComponent<CustomPassVolume>();
-            customPassVolume.injectionPoint = CustomPassInjectionPoint.BeforeRendering;
-            customPassVolume.isGlobal = true;
-            m_InstanceSegmentationPass = new InstanceSegmentationPass()
+            InstanceSegmentationPass instanceSegmentationPass;
+            if (s_CustomPassVolumeObject == null)
             {
-                name = "Instance segmentation pass",
-                targetCamera = GetComponent<Camera>(),
-                targetTexture = m_InstanceSegmentationTexture
-            };
-            m_InstanceSegmentationPass.EnsureInit();
-            customPassVolume.customPasses.Add(m_InstanceSegmentationPass);
+                s_CustomPassVolumeObject = new GameObject();
+                var customPassVolume = s_CustomPassVolumeObject.AddComponent<CustomPassVolume>();
+                customPassVolume.injectionPoint = CustomPassInjectionPoint.BeforeRendering;
+                customPassVolume.isGlobal = true;
+                instanceSegmentationPass = new InstanceSegmentationPass()
+                {
+                    name = "Instance segmentation pass"
+                };
+                instanceSegmentationPass.EnsureInit();
+                customPassVolume.customPasses.Add(instanceSegmentationPass);
 
-
-            m_LensDistortionPass = new LensDistortionPass(GetComponent<Camera>(), m_InstanceSegmentationTexture)
+                m_LensDistortionPass = new LensDistortionPass(GetComponent<Camera>(), m_InstanceSegmentationTexture)
+                {
+                    name = "Instance Segmentation Lens Distortion Pass"
+                };
+                customPassVolume.customPasses.Add(m_LensDistortionPass);
+                m_LensDistortionPass.EnsureInit();
+            }
+            else
             {
-                name = "Instance Segmentation Lens Distortion Pass"
-            };
-            m_LensDistortionPass.EnsureInit();
-            customPassVolume.customPasses.Add(m_LensDistortionPass);
+                instanceSegmentationPass = (InstanceSegmentationPass)
+                    s_CustomPassVolumeObject.GetComponent<CustomPassVolume>().customPasses
+                        .First(p => p is InstanceSegmentationPass);
+                m_LensDistortionPass = (LensDistortionPass)
+                    s_CustomPassVolumeObject.GetComponent<CustomPassVolume>().customPasses
+                        .First(p => p is LensDistortionPass);
+            }
+
+            m_LensDistortionPass.AddTarget(GetComponent<Camera>(), m_InstanceSegmentationTexture);
+            instanceSegmentationPass.AddTarget(GetComponent<Camera>(), m_InstanceSegmentationTexture);
 
             m_fLensDistortionEnabled = true;
 #elif URP_PRESENT

@@ -24,7 +24,7 @@ namespace UnityEngine.Perception.GroundTruth
         Shader m_ClassLabelingShader;
         Material m_OverrideMaterial;
 
-        public SemanticSegmentationCrossPipelinePass(Camera targetCamera, SemanticSegmentationLabelConfig labelConfig) : base(targetCamera)
+        public SemanticSegmentationCrossPipelinePass(SemanticSegmentationLabelConfig labelConfig)
         {
             this.m_LabelConfig = labelConfig;
         }

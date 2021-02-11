@@ -8,30 +8,19 @@ namespace UnityEngine.Perception.GroundTruth
 {
     internal abstract class GroundTruthCrossPipelinePass : IGroundTruthGenerator
     {
-        public Camera targetCamera;
-
         bool m_IsActivated;
 
-        protected GroundTruthCrossPipelinePass(Camera targetCamera)
+        protected GroundTruthCrossPipelinePass()
         {
-            this.targetCamera = targetCamera;
         }
 
         public virtual void Setup()
         {
-            if (targetCamera == null)
-                throw new InvalidOperationException("targetCamera may not be null");
-
-            // If we are forced to activate here we will get zeroes in the first frame.
             EnsureActivated();
         }
 
         public void Execute(ScriptableRenderContext renderContext, CommandBuffer cmd, Camera camera, CullingResults cullingResult)
         {
-            // CustomPasses are executed for each camera. We only want to run for the target camera
-            if (camera != targetCamera)
-                return;
-
             ExecutePass(renderContext, cmd, camera, cullingResult);
         }
 

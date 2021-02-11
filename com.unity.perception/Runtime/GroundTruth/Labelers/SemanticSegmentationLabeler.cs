@@ -96,8 +96,6 @@ namespace UnityEngine.Perception.GroundTruth
         internal bool m_fLensDistortionEnabled = false;
 
     #if HDRP_PRESENT
-        SemanticSegmentationPass m_SemanticSegmentationPass;
-        LensDistortionPass m_LensDistortionPass;
     #elif URP_PRESENT
         SemanticSegmentationUrpPass m_SemanticSegmentationPass;
         LensDistortionUrpPass m_LensDistortionPass;
@@ -174,15 +172,21 @@ namespace UnityEngine.Perception.GroundTruth
             m_SemanticSegmentationDirectory = k_SemanticSegmentationDirectory + Guid.NewGuid();
 
 #if HDRP_PRESENT
-            var gameObject = perceptionCamera.gameObject;
-            var customPassVolume = gameObject.GetComponent<CustomPassVolume>() ?? gameObject.AddComponent<CustomPassVolume>();
-            customPassVolume.injectionPoint = CustomPassInjectionPoint.BeforeRendering;
-            customPassVolume.isGlobal = true;
-            m_SemanticSegmentationPass = new SemanticSegmentationPass(myCamera, targetTexture, labelConfig)
+            var customPassVolumeObject = PerceptionCamera.s_CustomPassVolumeObject;
+            var customPassVolume = customPassVolumeObject.GetComponent<CustomPassVolume>();
+            var semanticSegmentationPass = (SemanticSegmentationPass)
+                customPassVolume.customPasses
+                .FirstOrDefault(p => p is SemanticSegmentationPass);
+            if (semanticSegmentationPass == null)
             {
-                name = "Labeling Pass"
-            };
-            customPassVolume.customPasses.Add(m_SemanticSegmentationPass);
+                semanticSegmentationPass = new SemanticSegmentationPass(labelConfig)
+                {
+                    name = "Semantic segmentation pass"
+                };
+                customPassVolume.customPasses.Add(semanticSegmentationPass);
+            }
+
+            semanticSegmentationPass.AddTarget(myCamera, targetTexture);
 
             m_LensDistortionPass = new LensDistortionPass(myCamera, targetTexture)
             {

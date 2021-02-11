@@ -28,7 +28,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <inheritdoc/>
         protected override bool supportsVisualization => true;
 
-        static readonly string k_Directory = "InstanceSegmentation" + Guid.NewGuid().ToString();
+        readonly string m_Directory = "InstanceSegmentation" + Guid.NewGuid();
         const string k_FilePrefix = "Instance_";
 
         /// <summary>
@@ -126,8 +126,8 @@ namespace UnityEngine.Perception.GroundTruth
             {
                 m_CurrentTexture = renderTexture;
 
-                m_InstancePath = $"{k_Directory}/{k_FilePrefix}{frameCount}.png";
-                var localPath = $"{Manager.Instance.GetDirectoryFor(k_Directory)}/{k_FilePrefix}{frameCount}.png";
+                m_InstancePath = $"{m_Directory}/{k_FilePrefix}{frameCount}.png";
+                var localPath = $"{Manager.Instance.GetDirectoryFor(m_Directory)}/{k_FilePrefix}{frameCount}.png";
 
                 var colors = new NativeArray<Color32>(data, Allocator.TempJob);
 

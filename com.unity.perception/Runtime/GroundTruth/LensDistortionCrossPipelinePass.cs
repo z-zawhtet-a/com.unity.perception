@@ -37,16 +37,12 @@ namespace UnityEngine.Perception.GroundTruth
         public static readonly int _Distortion_Params1 = Shader.PropertyToID("_Distortion_Params1");
         public static readonly int _Distortion_Params2 = Shader.PropertyToID("_Distortion_Params2");
 
-        LensDistortion m_lensDistortion;
         internal float? lensDistortionOverride = null;        // Largely for testing, but could be useful otherwise
 
         RenderTexture m_TargetTexture;
         RenderTexture m_distortedTexture;
 
-        //private LensDistortion m_LensDistortion;
-
-        public LensDistortionCrossPipelinePass(Camera targetCamera, RenderTexture targetTexture)
-            : base(targetCamera)
+        public LensDistortionCrossPipelinePass(RenderTexture targetTexture)
         {
             m_TargetTexture = targetTexture;
         }
@@ -78,17 +74,6 @@ namespace UnityEngine.Perception.GroundTruth
                 m_distortedTexture.filterMode = FilterMode.Point;
                 m_distortedTexture.Create();
             }
-
-            // Grab the lens distortion
-#if HDRP_PRESENT
-            // Grab the Lens Distortion from Perception Camera stack
-            var hdCamera = HDCamera.GetOrCreate(targetCamera);
-            var stack = hdCamera.volumeStack;
-            m_lensDistortion = stack.GetComponent<LensDistortion>();
-#elif URP_PRESENT
-            var stack = VolumeManager.instance.stack;
-            m_lensDistortion = stack.GetComponent<LensDistortion>();
-#endif
             m_fInitialized = true;
         }
 
@@ -97,10 +82,22 @@ namespace UnityEngine.Perception.GroundTruth
             if (m_fInitialized == false)
                 return;
 
-            if (SetLensDistortionShaderParameters() == false)
+            // Grab the lens distortion
+            LensDistortion lensDistortion;
+#if HDRP_PRESENT
+            // Grab the Lens Distortion from Perception Camera stack
+            var hdCamera = HDCamera.GetOrCreate(camera);
+            var stack = hdCamera.volumeStack;
+            lensDistortion = stack.GetComponent<LensDistortion>();
+#elif URP_PRESENT
+            var stack = VolumeManager.instance.stack;
+            lensDistortion = stack.GetComponent<LensDistortion>();
+#endif
+
+            if (SetLensDistortionShaderParameters(lensDistortion, camera) == false)
                 return;
 
-                // Blitmayhem
+            // Blitmayhem
             cmd.Blit(m_TargetTexture, m_distortedTexture, m_LensDistortionMaterial);
             cmd.Blit(m_distortedTexture, m_TargetTexture);
 
@@ -108,7 +105,7 @@ namespace UnityEngine.Perception.GroundTruth
             cmd.Clear();
         }
 
-        public bool SetLensDistortionShaderParameters()
+        public bool SetLensDistortionShaderParameters(LensDistortion lensDistortion, Camera camera)
         {
             if (m_fInitialized == false)
                 return false;
@@ -124,18 +121,15 @@ namespace UnityEngine.Perception.GroundTruth
             var mult = new Vector2(1.0f, 1.0f);
 
         #if HDRP_PRESENT
-            if(m_lensDistortion == null)
+            if(lensDistortion == null)
                 return false;
         #elif URP_PRESENT
-            if(targetCamera == null)
-                return false;
-
-            var UACD = targetCamera.GetUniversalAdditionalCameraData();
+            var UACD = camera.GetUniversalAdditionalCameraData();
 
             if(UACD.renderPostProcessing == false && lensDistortionOverride.HasValue == false)
                 return false;
 
-            if (m_lensDistortion.active == false)
+            if (lensDistortion.active == false)
                 return false;
 
         #else
@@ -146,18 +140,18 @@ namespace UnityEngine.Perception.GroundTruth
             {
                 intensity = lensDistortionOverride.Value;
             }
-            else if (m_lensDistortion != null)
+            else if (lensDistortion != null)
             {
                 // This is a bit finicky for URP - since Lens Distortion comes off the VolumeManager stack as active
                 // even if post processing is not enabled.  An intensity of 0.0f is untenable, so the below checks
                 // ensures post processing hasn't been enabled but Lens Distortion actually overriden
-                if (m_lensDistortion.intensity.value != 0.0f)
+                if (lensDistortion.intensity.value != 0.0f)
                 {
-                    intensity = m_lensDistortion.intensity.value;
-                    center = m_lensDistortion.center.value * 2f - Vector2.one;
-                    mult.x = Mathf.Max(m_lensDistortion.xMultiplier.value, 1e-4f);
-                    mult.y = Mathf.Max(m_lensDistortion.yMultiplier.value, 1e-4f);
-                    scale = 1.0f / m_lensDistortion.scale.value;
+                    intensity = lensDistortion.intensity.value;
+                    center = lensDistortion.center.value * 2f - Vector2.one;
+                    mult.x = Mathf.Max(lensDistortion.xMultiplier.value, 1e-4f);
+                    mult.y = Mathf.Max(lensDistortion.yMultiplier.value, 1e-4f);
+                    scale = 1.0f / lensDistortion.scale.value;
                 }
                 else
                 {
@@ -192,7 +186,6 @@ namespace UnityEngine.Perception.GroundTruth
 
         public override void SetupMaterialProperties(MaterialPropertyBlock mpb, Renderer renderer, Labeling labeling, uint instanceId)
         {
-            SetLensDistortionShaderParameters();
         }
     }
 }

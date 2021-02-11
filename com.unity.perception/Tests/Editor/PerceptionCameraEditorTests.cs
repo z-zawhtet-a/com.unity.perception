@@ -21,6 +21,7 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator EditorPause_DoesNotLogErrors()
         {
+            PerceptionCamera perceptionCamera = null;
             ResetScene();
             SetupCamera(p =>
             {
@@ -28,6 +29,7 @@ namespace EditorTests
                 p.captureRgbImages = true;
                 p.AddLabeler(new BoundingBox2DLabeler(idLabelConfig));
                 p.AddLabeler(new RenderedObjectInfoLabeler(idLabelConfig));
+                perceptionCamera = p;
             });
             yield return new EnterPlayMode();
             var expectedFirstFrame = Time.frameCount;

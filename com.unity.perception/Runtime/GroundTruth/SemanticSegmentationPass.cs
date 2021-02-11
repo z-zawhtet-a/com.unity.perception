@@ -10,19 +10,15 @@ namespace UnityEngine.Perception.GroundTruth
     /// Custom Pass which renders labeled images where each object with a Labeling component is drawn with the value
     /// specified by the given LabelingConfiguration.
     /// </summary>
-    public class SemanticSegmentationPass : CustomPass
+    public class SemanticSegmentationPass : GroundTruthPass
     {
-        public RenderTexture targetTexture;
         public SemanticSegmentationLabelConfig semanticSegmentationLabelConfig;
-        public Camera targetCamera;
 
         SemanticSegmentationCrossPipelinePass m_SemanticSegmentationCrossPipelinePass;
 
-        public SemanticSegmentationPass(Camera targetCamera, RenderTexture targetTexture, SemanticSegmentationLabelConfig semanticSegmentationLabelConfig)
+        public SemanticSegmentationPass(SemanticSegmentationLabelConfig semanticSegmentationLabelConfig)
         {
-            this.targetTexture = targetTexture;
             this.semanticSegmentationLabelConfig = semanticSegmentationLabelConfig;
-            this.targetCamera = targetCamera;
             EnsureInit();
         }
 
@@ -30,8 +26,8 @@ namespace UnityEngine.Perception.GroundTruth
         {
             if (m_SemanticSegmentationCrossPipelinePass == null)
             {
-                m_SemanticSegmentationCrossPipelinePass = new SemanticSegmentationCrossPipelinePass(targetCamera, semanticSegmentationLabelConfig);
-                m_SemanticSegmentationCrossPipelinePass.EnsureActivated();
+                m_SemanticSegmentationCrossPipelinePass = new SemanticSegmentationCrossPipelinePass(semanticSegmentationLabelConfig);
+                this.Init(m_SemanticSegmentationCrossPipelinePass);
             }
         }
 
@@ -43,12 +39,6 @@ namespace UnityEngine.Perception.GroundTruth
         {
             EnsureInit();
             m_SemanticSegmentationCrossPipelinePass.Setup();
-        }
-
-        protected override void Execute(ScriptableRenderContext renderContext, CommandBuffer cmd, HDCamera hdCamera, CullingResults cullingResult)
-        {
-            CoreUtils.SetRenderTarget(cmd, targetTexture);
-            m_SemanticSegmentationCrossPipelinePass.Execute(renderContext, cmd, hdCamera.camera, cullingResult);
         }
     }
 }
