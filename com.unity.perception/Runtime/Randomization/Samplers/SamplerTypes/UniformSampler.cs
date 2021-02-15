@@ -24,10 +24,10 @@ namespace UnityEngine.Perception.Randomization.Samplers
         }
 
         /// <summary>
-        /// Constructs a new uniform distribution sampler
+        /// Constructs a new uniform distribution sampler with the interval [min, max)
         /// </summary>
-        /// <param name="min">The smallest value contained within the range</param>
-        /// <param name="max">The largest value contained within the range</param>
+        /// <param name="min">The smallest value contained within the range (inclusive)</param>
+        /// <param name="max">The largest value contained within the range (exclusive)</param>
         public UniformSampler(float min, float max)
         {
             range = new FloatRange(min, max);

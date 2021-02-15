@@ -1,7 +1,10 @@
-﻿using UnityEngine;
+﻿using System;
 using UnityEngine.Perception.Randomization.Scenarios;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using Button = UnityEngine.UIElements.Button;
 using Object = UnityEngine.Object;
+using Random = UnityEngine.Random;
 
 namespace UnityEditor.Perception.Randomization
 {
@@ -27,6 +30,12 @@ namespace UnityEditor.Perception.Randomization
 
             CreatePropertyFields();
             CheckIfConstantsExist();
+
+            var randomSeedButton = m_Root.Q<Button>("random");
+            randomSeedButton.clicked += () =>
+            {
+                m_Scenario.genericConstants.randomSeed = (uint)Random.Range(int.MinValue, int.MaxValue);
+            };
 
             var serializeConstantsButton = m_Root.Q<Button>("serialize");
             serializeConstantsButton.clicked += () =>

@@ -12,6 +12,8 @@
                 <Foldout style="padding-left: 16px" text="Constants" name="constants-list" tooltip="A list of parameters for this scenario that will be JSON serialized in the configuration file."/>
                 <editor:PropertyField name="configuration-file-name" label="Constants File Name" binding-path="serializedConstantsFileName"/>
                 <VisualElement style="flex-direction: row;">
+                    <Button name="random" text="Generate Random Seed" style="flex-grow: 1;"
+                            tooltip="Creates a new random seed"/>
                     <Button name="serialize" text="Serialize To Config File" style="flex-grow: 1;"
                         tooltip="Serializes scenario constants and randomizer settings to a JSON configuration file"/>
                     <Button name="deserialize" text="Deserialize From Config File" style="flex-grow: 1;"
