@@ -81,6 +81,7 @@ test_trigger:
     - .yamato/upm-ci-testprojects.yml#{{project.name}}_linux_editmode_{{editor.version}}
     {% endfor %}
     {% endfor %}
+    - .yamato/upm-ci-full.yml#check_index_md
 
 all_tests:
   name: Complete Tests
@@ -129,6 +130,7 @@ all_tests:
     - .yamato/upm-ci-performance.yml#{{project.name}}_linux_standalone_{{editor.version}}
     {% endfor %}
     {% endfor %}
+    - .yamato/upm-ci-full.yml#check_index_md
 
 all_tests_nightly_perf:
   name: Nightly Performance Tests
@@ -157,3 +159,14 @@ all_tests_nightly_perf:
     - .yamato/upm-ci-performance.yml#{{project.name}}_linux_standalone_{{editor.version}}
     {% endfor %}
     {% endfor %}
+
+check_index_md:
+  name: Check Index.md
+  agent:
+    type: Unity::VM
+    image: cds-ops/ubuntu-18.04-agent:stable
+    flavor: b1.medium
+  interpreter: python
+  commands:
+    - cd com.unity.perception/Documentation~
+    - python UpdateIndexMd.py -check
