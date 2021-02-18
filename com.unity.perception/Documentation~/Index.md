@@ -1,3 +1,5 @@
+
+
 <img src="images/unity-wide.png" align="middle" width="3000"/>
 
 <img src="images/banner2.PNG" align="middle"/>
@@ -8,7 +10,6 @@
 
 > com.unity.perception is in active development. Its features and API are subject to significant change as development progresses.
 
-BAD CONTENT
 
 # Perception Package ([Unity Computer Vision](https://unity.com/computer-vision))
 

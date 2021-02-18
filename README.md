@@ -1,3 +1,9 @@
+[//]: # (Exclude from Index.md)
+
+[//]: # (Note: If you make changes to this file, run com.unity/perception/Documentation~/UpdateIndexMd.py to regenerate Index.md. This is enforced in Yamato.)
+
+[//]: # (End Exclude)
+
 <img src="com.unity.perception/Documentation~/images/unity-wide.png" align="middle" width="3000"/>
 
 <img src="com.unity.perception/Documentation~/images/banner2.PNG" align="middle"/>

@@ -165,7 +165,7 @@ check_index_md:
   agent:
     type: Unity::VM
     image: cds-ops/ubuntu-18.04-agent:stable
-    flavor: b1.medium
+    flavor: b1.small
   interpreter: python
   commands:
     - cd com.unity.perception/Documentation~
