@@ -13,12 +13,17 @@ namespace UnityEngine.Perception.Randomization.Randomizers
     {
         RandomizerTagManager tagManager => RandomizerTagManager.singleton;
 
-        void Awake()
+        void OnDestroy()
+        {
+            tagManager.RemoveTag(this);
+        }
+
+        protected virtual void OnEnable()
         {
             tagManager.AddTag(this);
         }
 
-        void OnDestroy()
+        protected virtual void OnDisable()
         {
             tagManager.RemoveTag(this);
         }

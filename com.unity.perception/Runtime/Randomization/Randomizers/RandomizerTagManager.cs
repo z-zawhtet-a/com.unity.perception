@@ -86,7 +86,7 @@ namespace UnityEngine.Perception.Randomization.Randomizers
 
         internal void RemoveTag<T>(T tag) where T : RandomizerTag
         {
-            var tagType = typeof(T);
+            var tagType = tag.GetType();
             if (m_TagMap.ContainsKey(tagType) && m_TagMap[tagType].Contains(tag))
                 m_TagMap[tagType].Remove(tag);
         }
