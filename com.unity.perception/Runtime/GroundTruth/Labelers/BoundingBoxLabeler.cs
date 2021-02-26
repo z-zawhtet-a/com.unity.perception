@@ -113,7 +113,7 @@ namespace UnityEngine.Perception.GroundTruth
             m_AsyncAnnotations[Time.frameCount] = perceptionCamera.SensorHandle.ReportAnnotationAsync(m_BoundingBoxAnnotationDefinition);
         }
 
-        void OnRenderedObjectInfosCalculated(int frameCount, NativeArray<RenderedObjectInfo> renderedObjectInfos)
+        void OnRenderedObjectInfosCalculated(int frameCount, NativeArray<RenderedObjectInfo> renderedObjectInfos/*, List<IdLabelEntry> labelCache*/)
         {
             if (!m_AsyncAnnotations.TryGetValue(frameCount, out var asyncAnnotation))
                 return;

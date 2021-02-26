@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
@@ -49,6 +50,11 @@ namespace UnityEngine.Perception.GroundTruth {
                 m_LabelEntryMatchCache = new LabelEntryMatchCache(this);
 
             return m_LabelEntryMatchCache.TryGetLabelEntryFromInstanceId(instanceId, out labelEntry, out index);
+        }
+
+        public static void GetIdLabelCache(out List<IdLabelEntry> cache)
+        {
+            cache = new List<IdLabelEntry>();// m_LabelEntries;
         }
 
         /// <inheritdoc/>

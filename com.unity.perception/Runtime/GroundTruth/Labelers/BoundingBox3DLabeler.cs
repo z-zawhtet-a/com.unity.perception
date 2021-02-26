@@ -198,7 +198,7 @@ namespace UnityEngine.Perception.GroundTruth
             entities.Dispose();
         }
 
-        void OnRenderObjectInfosCalculated(int frameCount, NativeArray<RenderedObjectInfo> renderedObjectInfos)
+        void OnRenderObjectInfosCalculated(int frameCount, NativeArray<RenderedObjectInfo> renderedObjectInfos/*, List<IdLabelEntry> labelCache*/)
         {
             if (!m_AsyncAnnotations.TryGetValue(frameCount, out var asyncAnnotation))
                 return;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -90,7 +90,7 @@ namespace UnityEngine.Perception.GroundTruth
             this.idLabelConfig = labelConfig;
         }
 
-        void OnRenderedObjectInfosCalculated(int frame, NativeArray<RenderedObjectInfo> renderedObjectInfos)
+        void OnRenderedObjectInfosCalculated(int frame, NativeArray<RenderedObjectInfo> renderedObjectInfos/*, List<IdLabelEntry> labelCache*/)
         {
             if (!m_AsyncAnnotations.TryGetValue(frame, out var annotation))
                 return;
@@ -117,7 +117,7 @@ namespace UnityEngine.Perception.GroundTruth
             }
         }
 
-        void OnImageCaptured(int frameCount, NativeArray<Color32> data, RenderTexture renderTexture)
+        void OnImageCaptured(int frameCount, NativeArray<Color32> data, RenderTexture renderTexture/*, List<IdLabelEntry> labelCache*/)
         {
             if (!m_AsyncAnnotations.ContainsKey(frameCount))
                 return;

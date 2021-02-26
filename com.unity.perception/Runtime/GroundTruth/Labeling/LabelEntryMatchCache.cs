@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -60,6 +61,11 @@ namespace UnityEngine.Perception.GroundTruth
         {
             World.DefaultGameObjectInjectionWorld?.GetExistingSystem<GroundTruthLabelSetupSystem>()?.Deactivate(this);
             m_InstanceIdToLabelEntryIndexLookup.Dispose();
+        }
+
+        public static implicit operator LabelEntryMatchCache(List<IdLabelEntry> v)
+        {
+            throw new NotImplementedException();
         }
     }
 }

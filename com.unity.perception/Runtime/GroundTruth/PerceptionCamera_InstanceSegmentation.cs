@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 
@@ -18,13 +19,13 @@ namespace UnityEngine.Perception.GroundTruth
         /// Invoked when instance segmentation images are read back from the graphics system. The first parameter is the
         /// Time.frameCount at which the objects were rendered. May be invoked many frames after the objects were rendered.
         /// </summary>
-        public event Action<int, NativeArray<Color32>, RenderTexture> InstanceSegmentationImageReadback;
+        public event Action<int, NativeArray<Color32>, RenderTexture/*, List<IdLabelEntry>*/> InstanceSegmentationImageReadback;
 
         /// <summary>
         /// Invoked when RenderedObjectInfos are calculated. The first parameter is the Time.frameCount at which the
         /// objects were rendered. This may be called many frames after the objects were rendered.
         /// </summary>
-        public event Action<int, NativeArray<RenderedObjectInfo>> RenderedObjectInfosCalculated;
+        public event Action<int, NativeArray<RenderedObjectInfo>/*, List<IdLabelEntry>*/> RenderedObjectInfosCalculated;
 
         RenderedObjectInfoGenerator m_RenderedObjectInfoGenerator;
         RenderTexture m_InstanceSegmentationTexture;
@@ -100,13 +101,40 @@ namespace UnityEngine.Perception.GroundTruth
 
             m_InstanceSegmentationReader = new RenderTextureReader<Color32>(m_InstanceSegmentationTexture, myCamera, (frameCount, data, tex) =>
             {
-                InstanceSegmentationImageReadback?.Invoke(frameCount, data, tex);
-                if (RenderedObjectInfosCalculated != null)
+                CaptureInstanceSegmentation(data);
+            });
+
+        }
+
+        void CaptureInstanceSegmentation(NativeArray<Color32> data)
+        {
+            //var myCache = new List<IdLabelEntry>();
+            IdLabelConfig.GetIdLabelCache(out var myCache);
+            var frameCount = Time.frameCount;
+            var width = m_InstanceSegmentationTexture.width;
+
+            CaptureRenderTexture.Capture(m_InstanceSegmentationTexture, request =>
+            {
+                var colorData = new NativeArray<Color32>(data, Allocator.Temp);
+                InstanceSegmentationImageReadback?.Invoke(frameCount, colorData, m_InstanceSegmentationTexture/*, myCache*/);
+
+                if(RenderedObjectInfosCalculated != null)
                 {
-                    m_RenderedObjectInfoGenerator.Compute(data, tex.width, BoundingBoxOrigin.TopLeft, out var renderedObjectInfos, Allocator.Temp);
-                    RenderedObjectInfosCalculated?.Invoke(frameCount, renderedObjectInfos);
+                    m_RenderedObjectInfoGenerator.Compute(colorData, width,
+                        BoundingBoxOrigin.TopLeft, /*myCache,*/ out var renderedObjectInfos, Allocator.Temp);
+                    RenderedObjectInfosCalculated?.Invoke(frameCount, renderedObjectInfos/*, myCache*/);
                     renderedObjectInfos.Dispose();
                 }
+                
+                myCache.Clear();
+                colorData.Dispose();
+
+                if (request.error)
+                {
+                    return AsyncRequest.Result.Error;
+                }
+
+                return AsyncRequest.Result.Completed;
             });
         }
 
