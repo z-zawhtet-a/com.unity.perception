@@ -200,6 +200,8 @@ namespace UnityEngine.Perception.Randomization.Scenarios
 
         void Start()
         {
+            currentIteration = (int)genericConstants.startFrame;
+
             var randomSeedMetricDefinition = DatasetCapture.RegisterMetricDefinition(
                 "random-seed",
                 "The random seed used to initialize the random state of the simulation. Only triggered once per simulation.",

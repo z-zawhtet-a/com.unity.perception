@@ -17,5 +17,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         [Tooltip("The starting value initializing all random value sequences generated through Samplers, Parameters, and Randomizers attached to a Scenario")]
         public uint randomSeed = SamplerUtility.largePrime;
+
+        public uint startFrame = 0;
     }
 }
