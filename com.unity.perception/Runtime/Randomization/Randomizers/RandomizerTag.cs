@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine.Scripting.APIUpdating;
 
 namespace UnityEngine.Perception.Randomization.Randomizers
 {
@@ -8,22 +7,39 @@ namespace UnityEngine.Perception.Randomization.Randomizers
     /// RandomizerTags are used to help randomizers query for a set of GameObjects to randomize.
     /// </summary>
     [Serializable]
-    [MovedFrom("UnityEngine.Experimental.Perception.Randomization.Randomizers")]
     public abstract class RandomizerTag : MonoBehaviour
     {
         RandomizerTagManager tagManager => RandomizerTagManager.singleton;
 
-        void OnDestroy()
+        /// <summary>
+        /// OnEnable is called when this RandomizerTag is enabled, either created, instantiated, or enabled via
+        /// the Unity Editor
+        /// </summary>
+        protected void OnEnable()
         {
-            tagManager.RemoveTag(this);
+            Register();
         }
 
-        protected virtual void OnEnable()
+        /// <summary>
+        /// OnDisable is called when this RandomizerTag is disabled
+        /// </summary>
+        protected virtual void OnDisable()
+        {
+            Unregister();
+        }
+
+        /// <summary>
+        /// Registers this tag with the tagManager
+        /// </summary>
+        public void Register()
         {
             tagManager.AddTag(this);
         }
 
-        protected virtual void OnDisable()
+        /// <summary>
+        /// Unregisters this tag with the tagManager
+        /// </summary>
+        public void Unregister()
         {
             tagManager.RemoveTag(this);
         }

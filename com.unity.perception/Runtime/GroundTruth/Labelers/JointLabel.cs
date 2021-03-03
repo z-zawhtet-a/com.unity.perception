@@ -8,18 +8,19 @@ namespace UnityEngine.Perception.GroundTruth
     /// Label to designate a custom joint/keypoint. These are needed to add body
     /// parts to a humanoid model that are not contained in its <see cref="Animator"/> <see cref="Avatar"/>
     /// </summary>
+    [AddComponentMenu("Perception/Labeling/Joint Label")]
     public class JointLabel : MonoBehaviour
     {
         /// <summary>
-        /// Maps this joint to a joint in a <see cref="KeyPointTemplate"/>
+        /// Maps this joint to a joint in a <see cref="KeypointTemplate"/>
         /// </summary>
         [Serializable]
         public class TemplateData
         {
             /// <summary>
-            /// The <see cref="KeyPointTemplate"/> that defines this joint.
+            /// The <see cref="KeypointTemplate"/> that defines this joint.
             /// </summary>
-            public KeyPointTemplate template;
+            public KeypointTemplate template;
             /// <summary>
             /// The name of the joint.
             /// </summary>

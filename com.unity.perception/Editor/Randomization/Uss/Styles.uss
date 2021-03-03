@@ -48,6 +48,10 @@
     margin: 3px 3px 3px 3px;
 }
 
+.scenario__error-box {
+    color: #FF4040;
+}
+
 .scenario__dark-viewport {
     border-radius: 5px;
     background-color: #191919;
@@ -137,6 +141,10 @@
     width: 0;
     flex-grow: 1;
     flex-shrink: 0;
+}
+
+.parameter__categorical-option-property-field Label.unity-property-field__label {
+    display: none;
 }
 
 .parameter__categorical-options-list-button {

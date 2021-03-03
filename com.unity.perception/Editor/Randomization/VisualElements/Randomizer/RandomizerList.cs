@@ -53,6 +53,19 @@ namespace UnityEditor.Perception.Randomization
         void RefreshList()
         {
             m_Container.Clear();
+            if (m_Property.arraySize > 0 &&
+                string.IsNullOrEmpty(m_Property.GetArrayElementAtIndex(0).managedReferenceFullTypename))
+            {
+                var textElement = new TextElement()
+                {
+                    text = "One or more randomizers have missing scripts. See console for more info."
+                };
+                textElement.AddToClassList("scenario__info-box");
+                textElement.AddToClassList("scenario__error-box");
+                m_Container.Add(textElement);
+                return;
+            }
+
             for (var i = 0; i < m_Property.arraySize; i++)
                 m_Container.Add(new RandomizerElement(m_Property.GetArrayElementAtIndex(i), this));
         }
@@ -68,7 +81,7 @@ namespace UnityEditor.Perception.Randomization
         public void RemoveRandomizer(RandomizerElement element)
         {
             Undo.RegisterCompleteObjectUndo(m_Property.serializedObject.targetObject, "Remove Randomizer");
-            scenario.RemoveRandomizer(element.randomizerType);
+            scenario.RemoveRandomizerAt(element.parent.IndexOf(element));
             m_Property.serializedObject.Update();
             RefreshList();
         }
@@ -77,8 +90,12 @@ namespace UnityEditor.Perception.Randomization
         {
             if (currentIndex == nextIndex)
                 return;
+            if (nextIndex > currentIndex)
+                nextIndex--;
             Undo.RegisterCompleteObjectUndo(m_Property.serializedObject.targetObject, "Reorder Randomizer");
-            scenario.ReorderRandomizer(currentIndex, nextIndex);
+            var randomizer = scenario.GetRandomizer(currentIndex);
+            scenario.RemoveRandomizerAt(currentIndex);
+            scenario.InsertRandomizer(nextIndex, randomizer);
             m_Property.serializedObject.Update();
             RefreshList();
         }

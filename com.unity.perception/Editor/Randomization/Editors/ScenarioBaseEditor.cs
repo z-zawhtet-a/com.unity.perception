@@ -1,9 +1,8 @@
-﻿using System;
+﻿using System.IO;
+using UnityEngine;
 using UnityEngine.Perception.Randomization.Scenarios;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
-using Button = UnityEngine.UIElements.Button;
-using Object = UnityEngine.Object;
 using Random = UnityEngine.Random;
 
 namespace UnityEditor.Perception.Randomization
@@ -18,6 +17,8 @@ namespace UnityEditor.Perception.Randomization
         VisualElement m_Root;
         ScenarioBase m_Scenario;
         SerializedObject m_SerializedObject;
+
+        const string k_ConfigFilePlayerPrefKey = "ScenarioBaseEditor/configFilePath";
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -37,20 +38,32 @@ namespace UnityEditor.Perception.Randomization
                 m_Scenario.genericConstants.randomSeed = (uint)Random.Range(int.MinValue, int.MaxValue);
             };
 
-            var serializeConstantsButton = m_Root.Q<Button>("serialize");
-            serializeConstantsButton.clicked += () =>
+            var generateConfigButton = m_Root.Q<Button>("generate-json-config");
+            generateConfigButton.clicked += () =>
             {
-                m_Scenario.SerializeToFile();
+                var filePath = GetSaveFilePath(
+                    "Generate Scenario JSON Configuration", Application.dataPath,
+                    "scenarioConfiguration", "json", k_ConfigFilePlayerPrefKey);
+                if (string.IsNullOrEmpty(filePath))
+                    return;
+                m_Scenario.SerializeToFile(filePath);
                 AssetDatabase.Refresh();
-                var newConfigFileAsset = AssetDatabase.LoadAssetAtPath<Object>(m_Scenario.defaultConfigFileAssetPath);
-                EditorGUIUtility.PingObject(newConfigFileAsset);
+                EditorUtility.RevealInFinder(filePath);
+                PlayerPrefs.SetString(k_ConfigFilePlayerPrefKey, filePath);
             };
 
-            var deserializeConstantsButton = m_Root.Q<Button>("deserialize");
+            var deserializeConstantsButton = m_Root.Q<Button>("import-json-config");
             deserializeConstantsButton.clicked += () =>
             {
+                var filePath = GetOpenFilePath(
+                    "Import Scenario JSON Configuration", Application.dataPath, "json", k_ConfigFilePlayerPrefKey);
+                if (string.IsNullOrEmpty(filePath))
+                    return;
                 Undo.RecordObject(m_Scenario, "Deserialized scenario configuration");
-                m_Scenario.DeserializeFromFile(m_Scenario.defaultConfigFilePath);
+                m_Scenario.DeserializeFromFile(filePath);
+                Debug.Log($"Deserialized scenario configuration from {Path.GetFullPath(filePath)}. " +
+                    "Using undo in the editor will revert these changes to your scenario.");
+                PlayerPrefs.SetString(k_ConfigFilePlayerPrefKey, filePath);
             };
 
             return m_Root;
@@ -103,6 +116,30 @@ namespace UnityEditor.Perception.Randomization
                 m_InspectorPropertiesContainer.style.marginBottom = 0;
                 m_ConstantsListVisualContainer.style.display = new StyleEnum<DisplayStyle>(DisplayStyle.None);
             }
+        }
+
+        static string GetSaveFilePath(
+            string title, string defaultDirectory, string defaultFileName, string fileExtension, string playerPrefKey)
+        {
+            var prevFilePath = PlayerPrefs.GetString(playerPrefKey);
+            var prevDirectory = defaultDirectory;
+            var prevFileName = defaultFileName;
+            if (File.Exists(prevFilePath))
+            {
+                prevDirectory = Path.GetDirectoryName(prevFilePath);
+                prevFileName = Path.GetFileNameWithoutExtension(prevFilePath);
+            }
+            return EditorUtility.SaveFilePanel(
+                title, prevDirectory, prevFileName, fileExtension);
+        }
+
+        static string GetOpenFilePath(string title, string defaultDirectory, string fileExtension, string playerPrefKey)
+        {
+            var prevFilePath = PlayerPrefs.GetString(playerPrefKey);
+            var prevDirectory = defaultDirectory;
+            if (File.Exists(prevFilePath))
+                prevDirectory = Path.GetDirectoryName(prevFilePath);
+            return EditorUtility.OpenFilePanel(title, prevDirectory, fileExtension);
         }
     }
 }

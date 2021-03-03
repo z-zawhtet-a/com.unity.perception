@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Reflection;
 using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.Perception.Randomization.Randomizers.SampleRandomizers;
 using UnityEngine.UIElements;
 
 namespace UnityEditor.Perception.Randomization
@@ -9,7 +11,7 @@ namespace UnityEditor.Perception.Randomization
     /// <summary>
     /// This class contains a set of helper functions for simplifying the creation of UI Elements editors
     /// </summary>
-    public static class UIElementsEditorUtilities
+    static class UIElementsEditorUtilities
     {
         /// <summary>
         /// Creates a list of PropertyFields from the class fields of the given SerializedObject
@@ -22,12 +24,14 @@ namespace UnityEditor.Perception.Randomization
             var fieldType = serializedObj.targetObject.GetType();
             var iterator = serializedObj.GetIterator();
             iterator.NextVisible(true);
-            iterator.NextVisible(false);
-            do
+            if (iterator.NextVisible(false))
             {
-                var propertyField = CreatePropertyField(iterator, fieldType);
-                containerElement.Add(propertyField);
-            } while (iterator.NextVisible(false));
+                do
+                {
+                    var propertyField = CreatePropertyField(iterator, fieldType);
+                    containerElement.Add(propertyField);
+                } while (iterator.NextVisible(false));
+            }
         }
 
         /// <summary>
@@ -38,13 +42,15 @@ namespace UnityEditor.Perception.Randomization
         /// <param name="containerElement">The element to place the created PropertyFields in</param>
         public static void CreatePropertyFields(SerializedProperty property, VisualElement containerElement)
         {
-            var fieldType = StaticData.GetManagedReferenceValue(property).GetType();
-
+            var obj = StaticData.GetManagedReferenceValue(property);
+            if (obj == null)
+                return;
+            var fieldType = obj.GetType();
             var iterator = property.Copy();
             var nextSiblingProperty = property.Copy();
             nextSiblingProperty.NextVisible(false);
-
             if (iterator.NextVisible(true))
+            {
                 do
                 {
                     if (SerializedProperty.EqualContents(iterator, nextSiblingProperty))
@@ -52,6 +58,7 @@ namespace UnityEditor.Perception.Randomization
                     var propertyField = CreatePropertyField(iterator, fieldType);
                     containerElement.Add(propertyField);
                 } while (iterator.NextVisible(false));
+            }
         }
 
         /// <summary>
@@ -64,7 +71,7 @@ namespace UnityEditor.Perception.Randomization
         {
             var propertyField = new PropertyField(iterator.Copy());
             propertyField.Bind(iterator.serializedObject);
-            var originalField = parentPropertyType.GetField(iterator.name);
+            var originalField = parentPropertyType.GetField(iterator.name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance );
             var tooltipAttribute = originalField.GetCustomAttributes(true)
                 .ToList().Find(att => att.GetType() == typeof(TooltipAttribute));
             if (tooltipAttribute != null)

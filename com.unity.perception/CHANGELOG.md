@@ -9,11 +9,43 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Upgrade Notes
 
+All appearances of the term `KeyPoint` have been renamed to `Keypoint`. Therefore, after upgrading to this version, if you have code that relies on any renamed types or names, make sure to alter your code to reflect the new names.
+
 ### Known Issues
 
 ### Added
 
+Added error message when missing Randomizer scripts are detected
+
+Scenario serialization has been updated to include scalar values on randomizers and parameters.
+
+Added new ScenarioBase virtual lifecycle hooks: OnAwake, OnStart, OnComplete, and OnIdle.
+
+Keypoint occlusion has been added, no keypoint information will be recorded for a labeled asset completely out of the camera's frustum. 
+
+New keypoint tests have been added to test keypoint state.
+
+The color of keypoints and connections are now reported in the annotation definition json file for keypoint templates.
+
+The PerceptionScenario abstract class has been added to abstract perception data capture specific functionality from the vanilla scenario lifecycle. 
+
 ### Changed
+
+Renamed all appearances of the term `KeyPoint` within types and names to `Keypoint`.
+
+ScenarioBase's Awake, Start, and Update methods are now private. The newly added virtual lifecycle hooks are to be used as replacements.
+
+Improved Run Unity Simulation window UI.
+
+The Run Unity Simulation window now accepts option scenario JSON configurations to override existing scenario editor settings.
+
+ScenarioBase's Get and Create randomizer methods have been augmented or replaced with more generic list index style accessors.
+
+The scenario inspector buttons serialize and deserialize have been refactored to open a file explorer generate and import JSON configurations.
+
+Randomizer tags now use OnEnable and OnDisable to manage lifecycle. This allows the user to toggle them on and off in the editor.
+
+The randomizer methods OnCreate(), OnStartRunning(), and OnStopRunning() are now deprecated and have been replaced with OnAwake(), OnEnable() and OnDisable() respectively to better reflect the existing MonoBehaviour lifecycle methods.
 
 ### Deprecated
 
@@ -21,11 +53,63 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+Fixed a null reference error that appeared when adding options to categorical parameters.
+
+Fixed ground truth not properly produced when there are other disabled PerceptionCameras present. Note: this does not yet add support for multiple enabled PerceptionCameras.
+
+Fixed exception when rendering inspector for randomizers with private serialized fields
+
+Fixed an issue preventing a user from adding more options to a Categorical Parameter's list of options with the 'Add Folder' button. 'Add Folder' now correctly appends the contents of the new folder on the list.
+
+Fixed a bug where uniform probabilities were not properly reset upon adding or removing options from a Categorical Parameter's list of options.
+
+Fixed keypoints being reporeted in wrong locations on the first frame an object is visible.
+
+## [0.7.0-preview.2] - 2021-02-08
+
+### Upgrade Notes
+
+### Known Issues
+
+### Added
+
+Added Register() and Unregister() methods to the RandomizerTag API so users can implement RandomizerTag compatible GameObject caching
+
+### Changed
+
+Switched accessibility of scenario MonoBehaviour lifecycle functions (Awake, Start, Update) from private to protected to enable users to define their own overrides when deriving the Scenario class.
+
+The GameObjectOneWayCache has been made public for users to cache GameObjects within their own custom Randomizers.
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+Fixed the math offsetting the iteration index of each Unity Simulation instance directly after they deserialize their app-params.
+
+The RandomizerTagManager now uses a LinkedHashSet data structure to register tags to preserve insertion order determinism in Unity Simulation.
+
+GameObjectOneWayCache now correctly registers and unregisters RandomizerTags on cached GameObjects.
+
 ## [0.7.0-preview.1] - 2021-02-01
 
 ### Upgrade Notes
 
+#### Randomization Namespace Change
+The Randomization toolset has been moved out of the Experimental namespace. After upgrading to this version of the Perception package, please follow these steps:
+* Replace all references to `UnityEngine.Experimental.Perception.Randomization` with `UnityEngine.Perception.Randomization` in your C# code.
+* Open your Unity Scene file in a text editor and replace all mentions of `UnityEngine.Experimental.Perception.Randomization` with `UnityEngine.Perception.Randomization`, and save the file.
+
+#### Random Seed Generation
+Replace usages of `ScenarioBase.GenerateRandomSeed()` with `SamplerState.NextRandomState()` in your custom Randomizer code.
+
+#### Sampler Ranges 
 Before upgrading a project to this version of the Perception package, make sure to keep a record of **all sampler ranges** in your added Randomizers. Due to a change in how sampler ranges are serialized, **after upgrading to this version, ranges for all stock Perception samplers (Uniform and Normal Samplers) will be reset**, and will need to be manually reverted by the user.
+
+#### Tag Querying
+The `RandomizerTagManager.Query<T>` function now returns the tag object itself instead of the GameObject it is attached to. You will need to slightly modify your custom Randomizers to accommodate this change. Please refer to the included sample Randomizers as examples.
 
 ### Known Issues
 
@@ -74,6 +158,10 @@ RandomizerTagManager.Query<T>() now returns RandomizerTags directly instead of t
 Semantic Segmentation Labeler now places data in folders with randomized filenames.
 
 The uniform toggle on Categorical Parameters will now reset the Parameter's probability weights to be uniform.
+
+Reorganized Perception MonoBehaviour paths within the AddComponentMenu.
+
+Upgraded the Unity Simulation Capture package dependency to 0.0.10-preview.18 and Unity Simulation Core to 0.0.10-preview.22
 
 ### Deprecated
 

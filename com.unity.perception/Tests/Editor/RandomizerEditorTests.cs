@@ -33,7 +33,7 @@ namespace EditorTests
             // if ScenarioBase.CreateRandomizer<>() was coded correctly
             Assert.DoesNotThrow(() =>
             {
-                m_Scenario.CreateRandomizer<ErrorsOnCreateTestRandomizer>();
+                m_Scenario.AddRandomizer(new ErrorsOnCreateTestRandomizer());
             });
         }
     }
@@ -44,7 +44,7 @@ namespace EditorTests
     {
         public GameObject testGameObject;
 
-        protected override void OnCreate()
+        protected override void OnAwake()
         {
             // This line should throw a NullReferenceException
             testGameObject.transform.position = Vector3.zero;

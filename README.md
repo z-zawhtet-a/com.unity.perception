@@ -9,9 +9,11 @@
 > com.unity.perception is in active development. Its features and API are subject to significant change as development progresses.
 
 
-# Perception Package (Unity Computer Vision)
+# Perception Package ([Unity Computer Vision](https://unity.com/computer-vision))
 
 The Perception package provides a toolkit for generating large-scale datasets for computer vision training and validation. It is focused on a handful of camera-based use cases for now and will ultimately expand to other forms of sensors and machine learning tasks.
+
+Visit the [Unity Computer Vision](https://unity.com/computer-vision) page for more information on our tools and offerings!
 
 ## Getting Started
 
@@ -20,6 +22,9 @@ Get your local Perception workspace up and running quickly. Recommended for user
 
 **[Perception Tutorial](com.unity.perception/Documentation~/Tutorial/TUTORIAL.md)**  
 Detailed instructions covering all the important steps from installing Unity Editor, to creating your first computer vision data generation project, building a randomized Scene, and generating large-scale synthetic datasets by leveraging the power of Unity Simulation.  No prior Unity experience required.
+
+**[Human Pose Labeling and Randomization Tutorial](com.unity.perception/Documentation~/HPTutorial/TUTORIAL.md)**  
+Step by step instructions for using the keypoint, pose, and animation randomization tools included in the Perception package. It is recommended that you finish Phase 1 of the Perception Tutorial above before starting this tutorial.
 
 ## Documentation
 In-depth documentation on individual components of the package. 

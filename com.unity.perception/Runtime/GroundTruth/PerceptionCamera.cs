@@ -24,7 +24,7 @@ namespace UnityEngine.Perception.GroundTruth
     public partial class PerceptionCamera : MonoBehaviour
     {
         //TODO: Remove the Guid path when we have proper dataset merging in Unity Simulation and Thea
-        internal static string RgbDirectory { get; } = $"RGB{Guid.NewGuid()}";
+        internal string rgbDirectory { get; } = $"RGB{Guid.NewGuid()}";
         static string s_RgbFilePrefix = "rgb_";
 
         /// <summary>
@@ -92,6 +92,7 @@ namespace UnityEngine.Perception.GroundTruth
         Dictionary<string, object> m_PersistentSensorData = new Dictionary<string, object>();
 
         int m_LastFrameCaptured = -1;
+        int m_LastFrameEndRendering = -1;
 
 #pragma warning disable 414
         //only used to confirm that GroundTruthRendererFeature is present in URP
@@ -156,8 +157,7 @@ namespace UnityEngine.Perception.GroundTruth
             return m_PersistentSensorData.Remove(key);
         }
 
-        // Start is called before the first frame update
-        void Awake()
+        void Start()
         {
             AsyncRequest.maxJobSystemParallelism = 0; // Jobs are not chained to one another in any way, maximizing parallelism
             AsyncRequest.maxAsyncRequestFrameAge = 4; // Ensure that readbacks happen before Allocator.TempJob allocations get stale
@@ -186,6 +186,7 @@ namespace UnityEngine.Perception.GroundTruth
         void OnEnable()
         {
             RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
             RenderPipelineManager.endCameraRendering += CheckForRendererFeature;
         }
 
@@ -376,21 +377,21 @@ namespace UnityEngine.Perception.GroundTruth
 
         void CaptureRgbData(Camera cam)
         {
-            Profiler.BeginSample("CaptureDataFromLastFrame");
             if (!captureRgbImages)
                 return;
+
+            Profiler.BeginSample("CaptureDataFromLastFrame");
 
             // Record the camera's projection matrix
             SetPersistentSensorData("camera_intrinsic", ToProjectionMatrix3x3(cam.projectionMatrix));
 
-            var captureFilename = $"{Manager.Instance.GetDirectoryFor(RgbDirectory)}/{s_RgbFilePrefix}{Time.frameCount}.png";
-            var dxRootPath = $"{RgbDirectory}/{s_RgbFilePrefix}{Time.frameCount}.png";
+            var captureFilename = $"{Manager.Instance.GetDirectoryFor(rgbDirectory)}/{s_RgbFilePrefix}{Time.frameCount}.png";
+            var dxRootPath = $"{rgbDirectory}/{s_RgbFilePrefix}{Time.frameCount}.png";
             SensorHandle.ReportCapture(dxRootPath, SensorSpatialData.FromGameObjects(m_EgoMarker == null ? null : m_EgoMarker.gameObject, gameObject), m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());
 
             Func<AsyncRequest<CaptureCamera.CaptureState>, AsyncRequest.Result> colorFunctor;
             var width = cam.pixelWidth;
             var height = cam.pixelHeight;
-            var flipY = ShouldFlipY(cam);
 
             colorFunctor = r =>
             {
@@ -420,23 +421,6 @@ namespace UnityEngine.Perception.GroundTruth
             Profiler.EndSample();
         }
 
-        // ReSharper disable once ParameterHidesMember
-        bool ShouldFlipY(Camera camera)
-        {
-
-#if HDRP_PRESENT
-            var hdAdditionalCameraData = GetComponent<HDAdditionalCameraData>();
-
-            //Based on logic in HDRenderPipeline.PrepareFinalBlitParameters
-            return hdAdditionalCameraData.flipYMode == HDAdditionalCameraData.FlipYMode.ForceFlipY || (camera.targetTexture == null && camera.cameraType == CameraType.Game);
-#elif URP_PRESENT
-            return (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Direct3D11 || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Metal) &&
-                (camera.targetTexture == null && camera.cameraType == CameraType.Game);
-#else
-            return false;
-#endif
-        }
-
         void OnSimulationEnding()
         {
             CleanUpInstanceSegmentation();
@@ -449,21 +433,26 @@ namespace UnityEngine.Perception.GroundTruth
 
         void OnBeginCameraRendering(ScriptableRenderContext _, Camera cam)
         {
-            if (cam != m_AttachedCamera)
-                return;
-            if (!SensorHandle.ShouldCaptureThisFrame)
-                return;
-            //there are cases when OnBeginCameraRendering is called multiple times in the same frame. Ignore the subsequent calls.
-            if (m_LastFrameCaptured == Time.frameCount)
+            if (!ShouldCallLabelers(cam, m_LastFrameCaptured))
                 return;
 
             m_LastFrameCaptured = Time.frameCount;
-#if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isPaused)
-                return;
-#endif
             CaptureRgbData(cam);
+            CallOnLabelers(l => l.InternalOnBeginRendering());
+        }
 
+        void OnEndCameraRendering(ScriptableRenderContext _, Camera cam)
+        {
+            if (!ShouldCallLabelers(cam, m_LastFrameEndRendering))
+                return;
+
+            m_LastFrameEndRendering = Time.frameCount;
+            CallOnLabelers(l => l.InternalOnEndRendering());
+        }
+
+
+        private void CallOnLabelers(Action<CameraLabeler> action)
+        {
             foreach (var labeler in m_Labelers)
             {
                 if (!labeler.enabled)
@@ -472,15 +461,32 @@ namespace UnityEngine.Perception.GroundTruth
                 if (!labeler.isInitialized)
                     labeler.Init(this);
 
-                labeler.InternalOnBeginRendering();
+                action(labeler);
             }
 
 
         }
 
+        private bool ShouldCallLabelers(Camera cam, int lastFrameCalledThisCallback)
+        {
+            if (cam != m_AttachedCamera)
+                return false;
+            if (!SensorHandle.ShouldCaptureThisFrame)
+                return false;
+            //there are cases when OnBeginCameraRendering is called multiple times in the same frame. Ignore the subsequent calls.
+            if (lastFrameCalledThisCallback == Time.frameCount)
+                return false;
+#if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isPaused)
+                return false;
+#endif
+            return true;
+        }
+
         void OnDisable()
         {
             RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
             RenderPipelineManager.endCameraRendering -= CheckForRendererFeature;
         }
 

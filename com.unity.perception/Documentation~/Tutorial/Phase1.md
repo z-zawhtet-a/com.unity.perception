@@ -4,17 +4,18 @@
 
 In this phase of the Perception tutorial, you will start from downloading and installing Unity Editor and the Perception package. You will then use our sample assets and provided components to easily generate a synthetic dataset for training an object-detection model. 
 
-Through-out the tutorial, lines starting with bullet points followed by **":green_circle: Action:"** denote the individual actions you will need to perform in order to progress through the tutorial. This is while non-bulleted lines will provide additional context and explanation around the actions. If in a hurry, you can just follow the actions!
+Through-out the tutorial, lines starting with bullet points followed by **":green_circle: Action:"** denote the individual actions you will need to perform in order to progress through the tutorial. This is while the rest of the text will provide additional context and explanation around the actions. If in a hurry, you can just follow the actions!
 
-Steps included this phase of the tutorial:
-- [Step 1: Download Unity Editor and Create a New Project](#step-1)
-- [Step 2: Download the Perception Package and Import Samples](#step-2)
-- [Step 3: Setup a Scene for Your Perception Simulation](#step-3)
-- [Step 4: Specify Ground-Truth and Set Up Object Labels](#step-4)
-- [Step 5: Set Up Background Randomizers](#step-5)
-- [Step 6: Set Up Foreground Randomizers](#step-6)
-- [Step 7: Inspect Generated Synthetic Data](#step-7)
-- [Step 8: Verify Data Using Dataset Insights](#step-8)
+Steps included in this phase of the tutorial:
+
+* [Step 1: Download Unity Editor and Create a New Project](#step-1)
+* [Step 2: Download the Perception Package and Import Samples](#step-2)
+* [Step 3: Setup a Scene for Your Perception Simulation](#step-3)
+* [Step 4: Specify Ground-Truth and Set Up Object Labels](#step-4)
+* [Step 5: Set Up Background Randomizers](#step-5)
+* [Step 6: Set Up Foreground Randomizers](#step-6)
+* [Step 7: Inspect Generated Synthetic Data](#step-7)
+* [Step 8: Verify Data Using Dataset Insights](#step-8)
 
 ### <a name="step-1">Step 1: Download Unity Editor and Create a New Project</a> 
 * **:green_circle: Action**: Navigate to [this](https://unity3d.com/get-unity/download/archive) page to download and install the latest version of **Unity Editor 2019.4.x**. (The tutorial has not yet been fully tested on newer versions.)
@@ -65,7 +66,7 @@ Once the sample files are imported, they will be placed inside the `Assets/Sampl
 * **:green_circle: Action**: **(For URP projects only)** The _**Project**_ tab contains a search bar; use it to find the file named `ForwardRenderer.asset`, as shown below:
 
 <p align="center">
-<img src="Images/forward_renderer.png"/>
+<img src="Images/forward_renderer.png" width="800"/>
 </p>
 
 * **:green_circle: Action**: **(For URP projects only)** Click on the found file to select it. Then, from the _**Inspector**_ tab of the editor, click on the _**Add Renderer Feature**_ button, and select _**Ground Truth Renderer Feature**_ from the dropdown menu:
@@ -91,7 +92,7 @@ As seen above, the new Scene already contains a camera (`Main Camera`) and a lig
 * **:green_circle: Action**: Click on `Main Camera` and in the _**Inspector**_ tab, modify the camera's `Position`, `Rotation`, `Projection` and `Size` to match the screenshot below. (Note that `Size` only becomes available once you set `Projection` to `Orthographic`)
 
 <p align="center">
-<img src="Images/camera_prep.png"/>
+<img src="Images/camera_prep.png" width = "900"/>
 </p>
 
 
@@ -121,7 +122,7 @@ labelers and labelling configurations:
 <img src="Images/perc_comp.png" width="400"/>
 </p>
 
-If you hover your mouse pointer over each of the fields shown (e.g. `Capture Interval`), you will see a tooltip popup with an explanation on what the item controls. You may see a warning at the bottom of this UI regarding asynchronous shader compilation. If so, follow the instructions in the warning message to disable this functionality and remove the warning.
+If you hover your mouse pointer over each of the fields shown (e.g. `Simulation Delta Time`), you will see a tooltip popup with an explanation on what the item controls.
 
 As seen in the UI for `Perception Camera`, the list of `Camera Labelers` is currently empty. For each type of ground-truth you wish to generate along-side your captured frames (e.g. 2D bounding boxes around objects), you will need to add a corresponding `Camera Labeler` to this list. 
 
@@ -177,7 +178,7 @@ In Unity, Prefabs are essentially reusable GameObjects that are stored to disk, 
 When you open the Prefab asset, you will see the object shown in the Scene tab and its components shown on the right side of the editor, in the _**Inspector**_ tab:
 
 <p align="center">
-<img src="Images/exampleprefab.png"/>
+<img src="Images/exampleprefab.png" width="900"/>
 </p>
 
 The Prefab contains a number of components, including a `Transform`, a `Mesh Filter`, a `Mesh Renderer` and a `Labeling` component (highlighted in the image above). While the first three of these are common Unity components, the fourth one is specific to the Perception package, and is used for assigning labels to objects. You can see here that the Prefab has one label already added, displayed in the list of `Added Labels`. The UI here provides a multitude of ways for you to assign labels to the object. You can either choose to have the asset automatically labeled (by enabling `Use Automatic Labeling`), or add labels manually. In case of automatic labeling, you can choose from a number of labeling schemes, e.g. the asset's name or folder name. If you go the manual route, you can type in labels, add labels from any of the label configurations included in the project, or add from lists of suggested labels based on the Prefab's name and path. 
@@ -373,13 +374,13 @@ While the simulation is running, your _**Game**_ view will quickly generate fram
 
 ### <a name="step-7">Step 7: Inspect Generated Synthetic Data</a> 
 
-Once the run is complete, you will see a message in the _**Console**_ tab of the editor, with information on where the generated data has been saved. An example is shown below (Mac OS):
+* **:green_circle: Action** Select `Main Camera` again to bring up its _**Inspector**_ view. You will now see a new section added to the `Perception Camera` component, with buttons for showing the latest dataset output folder and copying its path to clipboard. An example is shown below (Mac OS):
 
 <p align="center">
-<img src="Images/dataset_written.png"/>
+<img src="Images/output_path.png" width = "600"/>
 </p>
 
-* **:green_circle: Action**: Navigate to the dataset path addressed in the _**Console**_. 
+* **:green_circle: Action**: Click _**Show Folder**_ to show and highlight the folder in your operating system's file explorer. Enter this folder.
 
 In this folder, you will find a few types of data, depending on your `Perception Camera` settings. These can include:
 - Logs
@@ -405,14 +406,14 @@ To verify and analyze a variety of metrics for the generated data, such as numbe
 
 * **:green_circle: Action**: Download and install [Docker Desktop](https://www.docker.com/products/docker-desktop)
 * **:green_circle: Action**: Open a command line interface (Command Prompt on Windows, Terminal on Mac OS, etc.) and type the following command to run the Dataset Insights Docker image: 
-`docker run -p 8888:8888 -v "<path to synthetic data>:/data" -t unitytechnologies/datasetinsights:latest`, where the path to data is what we earlier found in Unity's console messages.
+`docker run -p 8888:8888 -v "<path to synthetic data>:/data" -t unitytechnologies/datasetinsights:latest`, where the path to data is what we looked at earlier. You can copy the path using the _**Copy Path**_ button in the `Perception Camera` UI.
 
 This will download a Docker image from Unity. If you get an error regarding the path to your dataset, make sure you have not included the enclosing `<` and `>` in the path and that the spaces are properly escaped.
 
 * **:green_circle: Action**: The image is now running on your computer. Open a web browser and navigate to `http://localhost:8888` to open the Jupyter notebook:
 
 <p align="center">
-<img src="Images/jupyter1.png"/>
+<img src="Images/jupyter1.png" width="800"/>
 </p>
 
 * **:green_circle: Action**: To make sure your data is properly mounted, navigate to the `data` folder. If you see the dataset's folders there, we are good to go.
@@ -420,7 +421,7 @@ This will download a Docker image from Unity. If you get an error regarding the 
 * **:green_circle: Action**: Once in the notebook, remove the `/<GUID>` part of the `data_root = /data/<GUID>` path. Since the dataset root is already mapped to `/data`, you can use this path directly.
 
 <p align="center">
-<img src="Images/jupyter2.png"/>
+<img src="Images/jupyter2.png" width="800"/>
 </p>
 
 This notebook contains a variety of functions for generating plots, tables, and bounding box images that help you analyze your generated dataset. Certain parts of this notebook are currently not of use to us, such as the code meant for downloading data generated through Unity Simulation (coming later in this tutorial).
