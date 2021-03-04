@@ -39,7 +39,8 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             }
             else
                 base.OnConfigurationImport();
-            currentIteration = constants.instanceIndex;
+
+            currentIteration = (int)constants.startFrame;
         }
 
         /// <inheritdoc/>

@@ -97,8 +97,6 @@ namespace UnityEngine.Perception.Randomization.Randomizers
         /// </summary>
         protected virtual void OnScenarioComplete() { }
 
-        protected virtual void OnScenarioStart() { }
-
         /// <summary>
         /// OnIterationStart is called at the start of a new Scenario iteration
         /// </summary>

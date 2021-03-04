@@ -284,6 +284,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         protected virtual void OnEnable()
         {
             activeScenario = this;
+            currentIteration = (int)genericConstants.startFrame;
         }
 
         /// <summary>
