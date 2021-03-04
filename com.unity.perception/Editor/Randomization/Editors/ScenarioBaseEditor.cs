@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Scenarios;
-using UnityEngine.UI;
 using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
