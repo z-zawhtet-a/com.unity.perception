@@ -13,9 +13,9 @@ using Moq;
 
 namespace GroundTruthTests
 {
-#if HDRP_PRESENT
-    [Ignore("Ignoring in HDRP because of a rendering issue in the first frame. See issue AISV-455.")]
-#endif
+// #if HDRP_PRESENT
+//     [Ignore("Ignoring in HDRP because of a rendering issue in the first frame. See issue AISV-455.")]
+// #endif
     public class PerceptionCameraIntegrationTests : GroundTruthTestBase
     {
         [UnityTest]
@@ -64,7 +64,7 @@ namespace GroundTruthTests
         }
 
         [UnityTest]
-        public IEnumerator EnableSemanticSegmentation_GeneratesCorrectDataset([Values(true, false)] bool enabled)
+        public IEnumerator EnableSemanticSegmentation_GeneratesCorrectDataset([Values(true, false)] bool enabled, [Values(true, false)] bool includeSky)
         {
             SemanticSegmentationLabeler semanticSegmentationLabeler = null;
             SetupCamera(pc =>
@@ -129,7 +129,7 @@ namespace GroundTruthTests
             });
             return labelConfig;
         }
-        static SemanticSegmentationLabelConfig CreateSemanticSegmentationLabelConfig()
+        static SemanticSegmentationLabelConfig CreateSemanticSegmentationLabelConfig(Color? skyColor = null)
         {
             var label = "label";
             var labelingConfiguration = ScriptableObject.CreateInstance<SemanticSegmentationLabelConfig>();
@@ -142,6 +142,10 @@ namespace GroundTruthTests
                     color = Color.blue
                 }
             });
+
+            if (skyColor.HasValue)
+                labelingConfiguration.skyColor = skyColor.Value;
+
             return labelingConfiguration;
         }
     }
