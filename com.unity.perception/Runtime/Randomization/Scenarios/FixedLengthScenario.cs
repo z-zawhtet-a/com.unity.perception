@@ -37,21 +37,21 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         {
             base.OnAwake();
             m_PerceptionCamera = FindObjectOfType<PerceptionCamera>();
-            if (m_PerceptionCamera != null && m_PerceptionCamera.captureTriggerMode != CaptureTriggerMode.Manual)
-            {
-                Debug.LogError("The perception camera must be set to manual capture mode", m_PerceptionCamera);
-                m_PerceptionCamera.enabled = false;
-                enabled = false;
-            }
+            // if (m_PerceptionCamera != null && m_PerceptionCamera.captureTriggerMode != CaptureTriggerMode.Manual)
+            // {
+            //     Debug.LogError("The perception camera must be set to manual capture mode", m_PerceptionCamera);
+            //     m_PerceptionCamera.enabled = false;
+            //     enabled = false;
+            // }
         }
 
         /// <inheritdoc/>
         protected override void OnUpdate()
         {
-            if (m_PerceptionCamera && currentIterationFrame == constants.framesPerIteration - 1)
-            {
-                m_PerceptionCamera.RequestCapture();
-            }
+            // if (m_PerceptionCamera && currentIterationFrame == constants.framesPerIteration - 1)
+            // {
+            //     m_PerceptionCamera.RequestCapture();
+            // }
         }
     }
 }

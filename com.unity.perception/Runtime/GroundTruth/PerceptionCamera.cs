@@ -6,6 +6,7 @@ using Unity.Profiling;
 using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
+using UnityEngine.Perception.Randomization.Scenarios;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering;
 #if HDRP_PRESENT
@@ -481,7 +482,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         void OnBeginCameraRendering(ScriptableRenderContext scriptableRenderContext, Camera cam)
         {
-            if (!ShouldCallLabelers(cam, m_LastFrameCaptured))
+            if (!ShouldCallLabelers(cam, m_LastFrameCaptured) || ScenarioBase.activeScenario.state != ScenarioBase.State.Playing)
                 return;
 
             m_LastFrameCaptured = Time.frameCount;
