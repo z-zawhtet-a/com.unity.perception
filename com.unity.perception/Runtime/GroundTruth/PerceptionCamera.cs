@@ -23,6 +23,8 @@ namespace UnityEngine.Perception.GroundTruth
     [RequireComponent(typeof(Camera))]
     public partial class PerceptionCamera : MonoBehaviour
     {
+        public event Action<int, byte[], int, int, float, float, GraphicsFormat> DepthBufferCaptured;
+
         //TODO: Remove the Guid path when we have proper dataset merging in Unity Simulation and Thea
         internal string rgbDirectory { get; } = $"RGB{Guid.NewGuid()}";
         static string s_RgbFilePrefix = "rgb_";
@@ -384,12 +386,46 @@ namespace UnityEngine.Perception.GroundTruth
             SetPersistentSensorData("camera_intrinsic", ToProjectionMatrix3x3(cam.projectionMatrix));
 
             var captureFilename = $"{Manager.Instance.GetDirectoryFor(rgbDirectory)}/{s_RgbFilePrefix}{Time.frameCount}.png";
+            var depthFilename = $"{Manager.Instance.GetDirectoryFor(rgbDirectory)}/{s_RgbFilePrefix}{Time.frameCount}_depth.png";
+
             var dxRootPath = $"{rgbDirectory}/{s_RgbFilePrefix}{Time.frameCount}.png";
             SensorHandle.ReportCapture(dxRootPath, SensorSpatialData.FromGameObjects(m_EgoMarker == null ? null : m_EgoMarker.gameObject, gameObject), m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());
 
             Func<AsyncRequest<CaptureCamera.CaptureState>, AsyncRequest.Result> colorFunctor;
             var width = cam.pixelWidth;
             var height = cam.pixelHeight;
+
+            var frame = Time.frameCount;
+            var nearClipPlane = cam.nearClipPlane;
+            var farClipPlane = cam.farClipPlane;
+            //var gf = GraphicsFormat.R8G8B8A8_UNorm;
+            var gf = GraphicsFormat.R32_SFloat;
+
+            Func<AsyncRequest<CaptureCamera.CaptureState>, AsyncRequest.Result> depthFunctor = r =>
+            {
+                var depthBuffer = r.data.depthBuffer as byte[];
+
+                DepthBufferCaptured?.Invoke(frame, depthBuffer, width, height, nearClipPlane, farClipPlane, gf);
+#if false
+                using (s_WriteFrame.Auto())
+                {
+                    byte[] encodedData;
+                    using (s_EncodeAndSave.Auto())
+                    {
+                        encodedData = ImageConversion.EncodeArrayToPNG(depthBuffer, gf, (uint)width, (uint)height);
+                    }
+
+                    var result = AsyncRequest.Result.Completed;
+
+                    if (gf == GraphicsFormat.R8G8B8A8_UNorm) result = !FileProducer.Write(depthFilename, encodedData) ? AsyncRequest.Result.Error : AsyncRequest.Result.Completed;
+
+                    return result;
+                }
+#endif
+                return AsyncRequest.Result.Completed;
+            };
+
+//            depthFunctor = null;
 
             colorFunctor = r =>
             {
@@ -408,7 +444,8 @@ namespace UnityEngine.Perception.GroundTruth
             };
 
 #if SIMULATION_CAPTURE_0_0_10_PREVIEW_16_OR_NEWER
-            CaptureCamera.Capture(cam, colorFunctor, forceFlip: ForceFlip.None);
+            cam.depthTextureMode = DepthTextureMode.Depth;
+            CaptureCamera.Capture(cam, colorFunctor, depthFunctor: depthFunctor, depthFormat:gf, forceFlip: ForceFlip.None);
 #else
             CaptureCamera.Capture(cam, colorFunctor, flipY: flipY);
 #endif

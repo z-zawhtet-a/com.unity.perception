@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Simulation;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Serialization;
 
 namespace UnityEngine.Perception.GroundTruth
@@ -101,6 +103,7 @@ namespace UnityEngine.Perception.GroundTruth
             m_CurrentFrame = 0;
 
             perceptionCamera.InstanceSegmentationImageReadback += OnInstanceSegmentationImageReadback;
+            perceptionCamera.DepthBufferCaptured += OnDepthBufferCaptured;
         }
 
         bool AreEqual(Color32 lhs, Color32 rhs)
@@ -108,8 +111,144 @@ namespace UnityEngine.Perception.GroundTruth
             return lhs.r == rhs.r && lhs.g == rhs.g && lhs.b == rhs.b && lhs.a == rhs.a;
         }
 
+        public static float DecodeFloatRGBA(byte[] buffer, int index)
+        {
+            return DecodeFloatRGBA(new Vector4(buffer[index + 3], buffer[index], buffer[index + 1], buffer[index + 2]));
+        }
+
+        static Vector4 k_DecodeDot = new Vector4(1f, 1f / 255f, 1f / 65025f, 1f / 16581375f);
+
+        public static float DecodeFloatRGBA(Vector4 color)
+        {
+            return Vector4.Dot(color, k_DecodeDot);
+        }
+
+        float GetDepth((int x, int y) pixel, (int x, int y) bufferExtents, byte[] depthBuffer, float near, float far, GraphicsFormat format)
+        {
+#if false
+            if (format != GraphicsFormat.R8G8B8A8_UNorm)
+            {
+                Debug.LogError($"Wrong conersion type");
+                return 0;
+            }
+#endif
+            var elementSize = 4;
+            var idx = (pixel.y * bufferExtents.x * elementSize) + (pixel.x * elementSize);
+            var linear = BitConverter.ToSingle(depthBuffer, idx);
+            var distance = far * linear;
+            return distance;
+
+#if false
+            var elementSize = 4;
+            // r, g, b have the same values for GraphicsFormat.R8G8B8A8_UNorm so any of the 3 bytes assigned to the pixel will work
+            var index = (pixel.y * bufferExtents.x * elementSize) + (pixel.x * elementSize);
+            //var pixelValue = depthBuffer[index];
+            //var intPixelValue = Convert.ToInt32(pixelValue);
+            var floatPixelValue = BitConverter.ToSingle(depthBuffer, index);
+            //var percentOffset = intPixelValue / 255f;
+            //var distance = near + (far - near) * percentOffset;
+            var distance = near + (far - near) * floatPixelValue;
+            return distance;
+#endif
+        //     return float.NaN;
+        }
+
+        void OnDepthBufferCaptured(int frame, byte[] depthBuffer, int width, int height, float nearClipPlane, float farClipPlane, GraphicsFormat format)
+        {
+#if false
+            var pixels = new (int, int)[]
+            {
+                (50, 15),
+                (50, 35),
+                (50, 62),
+                (50, 88)
+            };
+
+            foreach (var p in pixels)
+            {
+                var d = GetDepth(p, (width, height), depthBuffer, nearClipPlane, farClipPlane, format);
+                Debug.Log($"Depth at {p}: {d}");
+            }
+
+            KeypointsComputed?.Invoke(frame, null);
+#else
+            if (!m_AsyncAnnotations.TryGetValue(frame, out var asyncAnnotation))
+                return;
+
+            m_AsyncAnnotations.Remove(frame);
+
+            m_ToReport.Clear();
+
+            foreach (var keypointSet in asyncAnnotation.keypoints)
+            {
+                if (InstanceIdToColorMapping.TryGetColorFromInstanceId(keypointSet.Key, out var idColor))
+                {
+                    var shouldReport = false;
+
+                    var pointsVisible = 0;
+
+                    foreach (var keypoint in keypointSet.Value.keypoints)
+                    {
+                        // If the keypoint isn't mapped to a body part keep it at 0
+                        if (keypoint.state == 0) continue;
+
+                        if (keypoint.x < 0 || keypoint.x > width || keypoint.y < 0 || keypoint.y > height)
+                        {
+                            keypoint.state = 0;
+                            keypoint.x = 0;
+                            keypoint.y = 0;
+                            keypoint.z = 0;
+                        }
+                        else
+                        {
+//                            Debug.Log($"keypoint[{keypoint.index}] loc: ({keypoint.x}, {keypoint.y}, {keypoint.z}");
+
+                            // Get the pixel color at the keypoints location
+                            var h = height - (int)keypoint.y;
+                            //var h = (int)keypoint.y;
+                            var d = GetDepth(((int)keypoint.x, h), (width, height), depthBuffer, nearClipPlane, farClipPlane, format);
+
+                            if (keypoint.index == 10)
+                            {
+                                Debug.Log($"Depth: {d} <==> keypoint.z: {keypoint.z}");
+                            }
+
+#if true
+                            if (keypoint.z < (d + 0.5f))
+                            {
+                                keypoint.state = 0;
+                                pointsVisible++;
+                            }
+                            else
+                            {
+                                keypoint.state = 0;
+                            }
+
+#else
+                            keypoint.state = 2;
+#endif
+                            shouldReport = true;
+                        }
+                    }
+
+                    Debug.Log($"visible points: {pointsVisible}");
+                    Debug.Log($"should report: {shouldReport}   BBBB");
+
+                    if (shouldReport)
+                        m_ToReport.Add(keypointSet.Value);
+                }
+            }
+
+            KeypointsComputed?.Invoke(frame, m_ToReport);
+            asyncAnnotation.annotation.ReportValues(m_ToReport);
+#endif
+        }
+
         void OnInstanceSegmentationImageReadback(int frameCount, NativeArray<Color32> data, RenderTexture renderTexture)
         {
+            Debug.Log($"OnInstanceSeg read back");
+
+#if false
             if (!m_AsyncAnnotations.TryGetValue(frameCount, out var asyncAnnotation))
                 return;
 
@@ -135,14 +274,21 @@ namespace UnityEngine.Perception.GroundTruth
                             keypoint.state = 0;
                             keypoint.x = 0;
                             keypoint.y = 0;
+                            keypoint.z = 0;
                         }
                         else
                         {
+                            Debug.Log($"keypoint[{keypoint.index}] loc: ({keypoint.x}, {keypoint.y}, {keypoint.z}");
+
                             // Get the pixel color at the keypoints location
                             var height = renderTexture.height - (int)keypoint.y;
                             var pixel = data[height * width + (int)keypoint.x];
 
+#if false
                             keypoint.state = AreEqual(pixel, idColor) ? 2 : 1;
+#else
+                            keypoint.state = 2;
+#endif
                             shouldReport = true;
                         }
                     }
@@ -154,6 +300,7 @@ namespace UnityEngine.Perception.GroundTruth
 
             KeypointsComputed?.Invoke(frameCount, m_ToReport);
             asyncAnnotation.annotation.ReportValues(m_ToReport);
+#endif
         }
 
         /// <inheritdoc/>
@@ -226,6 +373,8 @@ namespace UnityEngine.Perception.GroundTruth
             /// The keypoint's y-coordinate pixel location
             /// </summary>
             public float y;
+
+            public float z;
             /// <summary>
             /// The state of the point,
             /// 0 = not present,
@@ -365,6 +514,7 @@ namespace UnityEngine.Perception.GroundTruth
                             keypoints[i].index = i;
                             keypoints[i].x = loc.x;
                             keypoints[i].y = loc.y;
+                            keypoints[i].z = loc.z;
                             keypoints[i].state = 2;
                         }
                     }
@@ -378,6 +528,7 @@ namespace UnityEngine.Perception.GroundTruth
                     keypoints[idx].index = idx;
                     keypoints[idx].x = loc.x;
                     keypoints[idx].y = loc.y;
+                    keypoints[idx].z = loc.z;
                     keypoints[idx].state = 2;
                 }
 
