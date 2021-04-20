@@ -39,8 +39,8 @@ namespace UnityEngine.Perception.GroundTruth
 
             if (shaderVariantCollection != null)
             {
-                shaderVariantCollection.Add(
-                    new ShaderVariantCollection.ShaderVariant(m_ClassLabelingShader, PassType.ScriptableRenderPipeline));
+                // shaderVariantCollection.Add(
+                //     new ShaderVariantCollection.ShaderVariant(m_ClassLabelingShader, PassType.N));
             }
 
             m_OverrideMaterial = new Material(m_ClassLabelingShader);
@@ -78,6 +78,13 @@ namespace UnityEngine.Perception.GroundTruth
 
             // Set the labeling ID so that it can be accessed in ClassSemanticSegmentationPass.shader
             mpb.SetVector(k_LabelingId, found ? entry.color : Color.black);
+
+            if (renderer != null && renderer.material != null && renderer.material.HasProperty("_MainTex"))
+            {
+                var maintex = renderer.material.GetTexture("_MainTex");
+                if (maintex != null)
+                    mpb.SetTexture("_MainTex", renderer.material.GetTexture("_MainTex"));
+            }
         }
 
         public override void ClearMaterialProperties(MaterialPropertyBlock mpb, Renderer renderer, Labeling labeling, uint instanceId)
