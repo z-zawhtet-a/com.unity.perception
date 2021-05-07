@@ -11,6 +11,7 @@ namespace UnityEngine.Perception.GroundTruth
     class LocalPositionCrossPipelinePass : GroundTruthCrossPipelinePass
     {
         const string k_ShaderName = "Perception/LocalPosition";
+        static readonly int k_Override = Shader.PropertyToID("_Override");
         static readonly int k_Center = Shader.PropertyToID("_Center");
         static readonly int k_Size = Shader.PropertyToID("_Size");
 
@@ -65,13 +66,15 @@ namespace UnityEngine.Perception.GroundTruth
             MaterialPropertyBlock mpb, Renderer renderer, Labeling labeling, uint instanceId)
         {
             var bounds = renderer.GetComponentInChildren<MeshFilter>().sharedMesh.bounds;
+            mpb.SetColor(k_Override, Color.white);
             mpb.SetVector(k_Center, bounds.center);
             mpb.SetVector(k_Size, bounds.size);
         }
 
-        public override void ClearMaterialProperties(MaterialPropertyBlock mpb, Renderer renderer, Labeling labeling, uint instanceId)
+        public override void ClearMaterialProperties(
+            MaterialPropertyBlock mpb, Renderer renderer, Labeling labeling, uint instanceId)
         {
-            // mpb.SetVector(k_Center, Color.black);
+            mpb.SetColor(k_Override, Color.black);
         }
     }
 }

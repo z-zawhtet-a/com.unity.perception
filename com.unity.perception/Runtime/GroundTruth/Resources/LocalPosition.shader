@@ -4,6 +4,7 @@ Shader "Perception/LocalPosition"
     {
         _Center ("Center", Vector) = (0, 0, 0, 0)
         _Size ("Size", Vector) = (1, 1, 1, 0)
+        _Override ("Override", Color) = (0, 0, 0, 1)
     }
 
     HLSLINCLUDE
@@ -39,7 +40,8 @@ Shader "Perception/LocalPosition"
 
             float4 _Center;
             float4 _Size;
-            
+            fixed4 _Override;
+
             struct app_to_vertex
             {
                 float4 vertex : POSITION;
@@ -57,6 +59,7 @@ Shader "Perception/LocalPosition"
                 o.vertex = UnityObjectToClipPos(input.vertex);
                 o.vertex_object_space = (input.vertex - _Center) / _Size + float4(0.5, 0.5, 0.5, 1);
                 o.vertex_object_space.w = 1;
+                o.vertex_object_space = o.vertex_object_space * _Override;
                 return o;
             }
 
