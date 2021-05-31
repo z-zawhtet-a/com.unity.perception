@@ -116,8 +116,7 @@ namespace UnityEngine.Perception.GroundTruth
         internal void InternalCleanup() => Cleanup();
         internal void InternalVisualize() => OnVisualize();
 
-        private bool m_ShowVisualizations = false;
-
+        bool m_ShowVisualizations;
         /// <summary>
         /// Turns on/off the labeler's realtime visualization capability. If a labeler does not support realtime
         /// visualization (<see cref="supportsVisualization"/>) or visualization is not enabled on the PerceptionCamera
@@ -125,10 +124,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         internal bool visualizationEnabled
         {
-            get
-            {
-                return supportsVisualization && m_ShowVisualizations;
-            }
+            get => !supportsVisualization || !perceptionCamera || perceptionCamera.showVisualizations;
             set
             {
                 if (!supportsVisualization) return;
@@ -136,7 +132,6 @@ namespace UnityEngine.Perception.GroundTruth
                 if (value != m_ShowVisualizations)
                 {
                     m_ShowVisualizations = value;
-
                     OnVisualizerEnabledChanged(m_ShowVisualizations);
                 }
             }
@@ -170,8 +165,6 @@ namespace UnityEngine.Perception.GroundTruth
                 sensorHandle = newPerceptionCamera.SensorHandle;
                 Setup();
                 isInitialized = true;
-
-                m_ShowVisualizations = supportsVisualization && perceptionCamera.showVisualizations;
             }
             catch (Exception)
             {
