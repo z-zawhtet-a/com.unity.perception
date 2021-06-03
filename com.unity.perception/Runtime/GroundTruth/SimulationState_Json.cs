@@ -13,7 +13,7 @@ using Unity.Simulation;
 
 namespace UnityEngine.Perception.GroundTruth
 {
-    partial class SimulationState
+    public partial class SimulationState
     {
         const Formatting k_Formatting = Formatting.Indented;
 
@@ -158,6 +158,8 @@ namespace UnityEngine.Perception.GroundTruth
 
             void Write(List<PendingCapture> pendingCaptures, SimulationState simulationState, int captureFileIndex)
             {
+                m_ActiveReporter.ProcessPendingCaptures(pendingCaptures, simulationState);
+#if false
                 simulationState.m_SerializeCapturesAsyncSampler.Begin();
 
                 //lazily allocate for fast zero-write frames
@@ -173,6 +175,7 @@ namespace UnityEngine.Perception.GroundTruth
                 simulationState.WriteJObjectToFile(capturesJObject,
                     $"captures_{captureFileIndex:000}.json");
                 simulationState.m_SerializeCapturesAsyncSampler.End();
+#endif
             }
 
             if (flush)

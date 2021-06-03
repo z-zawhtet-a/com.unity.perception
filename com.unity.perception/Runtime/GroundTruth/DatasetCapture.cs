@@ -187,6 +187,11 @@ namespace UnityEngine.Perception.GroundTruth
         }
     }
 
+    public enum OutputMode
+    {
+        Perception,
+        COCO
+    }
 
     /// <summary>
     /// Capture trigger modes for sensors.

@@ -8,17 +8,22 @@ using Newtonsoft.Json.Linq;
 using Unity.Collections;
 using Unity.Simulation;
 using UnityEngine;
+using UnityEngine.Perception.GroundTruth.Exporters;
+using UnityEngine.Perception.GroundTruth.Exporters.Coco;
+using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
 using UnityEngine.Profiling;
 
 namespace UnityEngine.Perception.GroundTruth
 {
-    partial class SimulationState
+    public partial class SimulationState
     {
         HashSet<SensorHandle> m_ActiveSensors = new HashSet<SensorHandle>();
         Dictionary<SensorHandle, SensorData> m_Sensors = new Dictionary<SensorHandle, SensorData>();
         HashSet<EgoHandle> m_Egos = new HashSet<EgoHandle>();
         HashSet<Guid> m_Ids = new HashSet<Guid>();
         Guid m_SequenceId = Guid.NewGuid();
+
+        IDatasetReporter m_ActiveReporter = new PerceptionExporter();
 
         // Always use the property SequenceTimeMs instead
         int m_FrameCountLastUpdatedSequenceTime;
@@ -47,9 +52,11 @@ namespace UnityEngine.Perception.GroundTruth
         float m_LastTimeScale;
         readonly string m_OutputDirectoryName;
         string m_OutputDirectoryPath;
+
         public const string userBaseDirectoryKey = "userBaseDirectory";
         public const string latestOutputDirectoryKey = "latestOutputDirectory";
         public const string defaultOutputBaseDirectory = "defaultOutputBaseDirectory";
+        public const string outputFormatMode = "outputFormatMode";
 
         public bool IsRunning { get; private set; }
 
@@ -71,6 +78,15 @@ namespace UnityEngine.Perception.GroundTruth
 
         public SimulationState(string outputDirectory)
         {
+            var mode = (OutputMode)PlayerPrefs.GetInt(outputFormatMode, 0);
+
+            m_ActiveReporter = mode switch
+            {
+                OutputMode.Perception => new PerceptionExporter(),
+                OutputMode.COCO => new CocoExporter(),
+                _ => m_ActiveReporter
+            };
+
             PlayerPrefs.SetString(defaultOutputBaseDirectory, Configuration.Instance.GetStorageBasePath());
             m_OutputDirectoryName = outputDirectory;
             var basePath = PlayerPrefs.GetString(userBaseDirectoryKey, string.Empty);
@@ -87,16 +103,30 @@ namespace UnityEngine.Perception.GroundTruth
                     basePath = Configuration.localPersistentDataPath;
                 }
             }
+/*
+            //var activeReporterString = PlayerPrefs.GetString(activeReporterKey, defaultReporter);
+            var activeReporterString = "coco";
 
+            if (activeReporterString == "perceptionOutput")
+            {
+                m_ActiveReporter = new PerceptionExporter();
+            }
+            else
+            {
+                m_ActiveReporter = new CocoExporter();
+            }
+*/
             PlayerPrefs.SetString(latestOutputDirectoryKey, Manager.Instance.GetDirectoryFor("", basePath));
             IsRunning = true;
+
+            m_ActiveReporter?.OnSimulationBegin(Manager.Instance.GetDirectoryFor(m_OutputDirectoryName));
         }
 
         /// <summary>
         /// A self-sufficient container for all information about a reported capture. Capture writing should not depend on any
         /// state outside of this container, as other state may have changed since the capture was reported.
         /// </summary>
-        class PendingCapture
+        public class PendingCapture
         {
             public Guid Id;
             public SensorHandle SensorHandle;
@@ -166,11 +196,12 @@ namespace UnityEngine.Perception.GroundTruth
             public EgoHandle egoHandle;
         }
 
-        struct AnnotationData
+        public struct AnnotationData
         {
             public readonly AnnotationDefinition AnnotationDefinition;
             public string Path;
             public JArray ValuesJson;
+            public IEnumerable<object> RawValues;
             public bool IsAssigned => Path != null || ValuesJson != null;
 
             public AnnotationData(AnnotationDefinition annotationDefinition, string path, JArray valuesJson)
@@ -263,6 +294,33 @@ namespace UnityEngine.Perception.GroundTruth
 
             sensorData.lastCaptureFrameCount = Time.frameCount;
             m_Sensors[sensorHandle] = sensorData;
+
+            // SB - maybe this can all be moved to the other capture area
+            var width = -1;
+            var height = -1;
+            var fullPath = filename;
+            var frameCount = 0;
+
+            foreach (var i in additionalSensorValues)
+            {
+                switch (i.Item1)
+                {
+                    case "camera_width":
+                        width = (int)i.Item2;
+                        break;
+                    case "camera_height":
+                        height = (int)i.Item2;
+                        break;
+                    case "full_path":
+                        fullPath = (string)i.Item2;
+                        break;
+                    case "frame":
+                        frameCount = (int)i.Item2;
+                        break;
+                }
+            }
+
+            m_ActiveReporter.OnCaptureReported(frameCount, width, height, filename);
         }
 
         static string GetFormatFromFilename(string filename)
@@ -574,9 +632,32 @@ namespace UnityEngine.Perception.GroundTruth
             if (m_PendingMetrics.Count > 0)
                 Debug.LogError($"Simulation ended with pending metrics: {string.Join(", ", m_PendingMetrics.Select(c => $"id:{c.MetricId} step:{c.Step}"))}");
 
+            if (m_AdditionalInfoTypeData.Any())
+            {
+                List<IdLabelConfig.LabelEntrySpec> labels = new List<IdLabelConfig.LabelEntrySpec>();
+
+                foreach (var infoTypeData in m_AdditionalInfoTypeData)
+                {
+                    if (infoTypeData.specValues == null) continue;
+
+                    foreach (var spec in infoTypeData.specValues)
+                    {
+                        if (spec is IdLabelConfig.LabelEntrySpec entrySpec)
+                        {
+                            labels.Add(entrySpec);
+                        }
+                    }
+
+                    Debug.Log($"adt: {infoTypeData}");
+
+                }
+            }
+
             WriteReferences();
             Time.captureDeltaTime = 0;
             IsRunning = false;
+
+            m_ActiveReporter?.OnSimulationEnd();
         }
 
         public AnnotationDefinition RegisterAnnotationDefinition<TSpec>(string name, TSpec[] specValues, string description, string format, Guid id)
@@ -585,6 +666,8 @@ namespace UnityEngine.Perception.GroundTruth
                 id = Guid.NewGuid();
 
             RegisterAdditionalInfoType(name, specValues, description, format, id, AdditionalInfoKind.Annotation);
+
+            m_ActiveReporter.OnAnnotationRegistered(id, specValues); // <- Not sure about this one either
 
             return new AnnotationDefinition(id);
         }
@@ -717,10 +800,15 @@ namespace UnityEngine.Perception.GroundTruth
                 }
             }
 
-            ReportAsyncAnnotationResult(asyncAnnotation, filename, jArray);
+            var values2 = new List<object>();
+            foreach (var v in values)
+            {
+                values2.Add(v);
+            }
+            ReportAsyncAnnotationResult(asyncAnnotation, filename, jArray, values:values2);
         }
 
-        void ReportAsyncAnnotationResult(AsyncAnnotation asyncAnnotation, string filename, JArray jArray)
+        void ReportAsyncAnnotationResult(AsyncAnnotation asyncAnnotation, string filename, JArray jArray, IEnumerable<object> values = null)
         {
             if (!asyncAnnotation.IsPending)
                 throw new InvalidOperationException("AsyncAnnotation has already been reported and cannot be reported again.");
@@ -745,6 +833,7 @@ namespace UnityEngine.Perception.GroundTruth
 
             annotationData.Path = filename;
             annotationData.ValuesJson = jArray;
+            annotationData.RawValues = values;
 
             annotationTuple.Item2 = annotationData;
             pendingCapture.Annotations[annotationIndex] = annotationTuple;

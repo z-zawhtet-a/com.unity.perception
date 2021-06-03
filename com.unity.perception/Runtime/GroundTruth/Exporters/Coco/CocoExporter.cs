@@ -328,6 +328,21 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
         }
 
+        public static string versionEntry = "0.0.1";
+        public static string descriptionEntry = "Description of dataset";
+        public static string contributorEntry = "Anonymous";
+        public static string urlEntry = "Not Set";
+
+        public static CocoTypes.License[] licenses = new []
+        {
+            new CocoTypes.License
+            {
+                id = 0,
+                name = "No License",
+                url = "Not Set"
+            }
+        };
+
         static void CreateHeaderInfo(StringBuilder stringBuilder)
         {
             stringBuilder.Append("\"info\":");
@@ -336,10 +351,10 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             var info = new CocoTypes.Info
             {
                 year = int.Parse(dateTime.ToString("yyyy")),
-                version = "0.0.1",
-                description = "temp output of coco data",
-                contributor = "Tyler Durden",
-                url = "https://ytmnd.com",
+                version = versionEntry,
+                description = descriptionEntry,
+                contributor = contributorEntry,
+                url = urlEntry,
                 date_created = DateTime.Today.ToString("D")
             };
             stringBuilder.Append(JsonUtility.ToJson(info));
@@ -347,19 +362,6 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         static void CreateLicenseInfo(StringBuilder stringBuilder)
         {
-            var licenses = new CocoTypes.Licenses()
-            {
-                licenses = new[]
-                {
-                    new CocoTypes.License
-                    {
-                        id = 0,
-                        name = "Unity License",
-                        url = "https://unity3d.com"
-                    }
-                }
-            };
-
             var tmpJson = JsonUtility.ToJson(licenses);
 
             // Remove the start and end '{' from the licenses json

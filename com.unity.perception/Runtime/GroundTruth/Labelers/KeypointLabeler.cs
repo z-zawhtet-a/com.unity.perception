@@ -36,7 +36,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// The GUID id to associate with the annotations produced by this labeler.
         /// </summary>
-        public string annotationId = "8b3ef246-daa7-4dd5-a0e8-a943f6e7f8c2";
+        public static string annotationId = "8b3ef246-daa7-4dd5-a0e8-a943f6e7f8c2";
         /// <summary>
         /// The <see cref="IdLabelConfig"/> which associates objects with labels.
         /// </summary>
@@ -560,7 +560,7 @@ namespace UnityEngine.Perception.GroundTruth
         // ReSharper disable InconsistentNaming
         // ReSharper disable NotAccessedField.Local
         [Serializable]
-        struct JointJson
+        public struct JointJson
         {
             public string label;
             public int index;
@@ -568,7 +568,7 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         [Serializable]
-        struct SkeletonJson
+        public struct SkeletonJson
         {
             public int joint1;
             public int joint2;
@@ -576,7 +576,7 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         [Serializable]
-        struct KeypointJson
+        public struct KeypointJson
         {
             public string template_id;
             public string template_name;

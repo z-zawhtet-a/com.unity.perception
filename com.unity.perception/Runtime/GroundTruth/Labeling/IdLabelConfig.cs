@@ -73,7 +73,7 @@ namespace UnityEngine.Perception.GroundTruth {
         }
 
         [SuppressMessage("ReSharper", "InconsistentNaming")]
-        internal struct LabelEntrySpec
+        public struct LabelEntrySpec
         {
             /// <summary>
             /// The label id prepared for reporting in the annotation
