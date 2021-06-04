@@ -23,7 +23,7 @@ namespace UnityEngine.Perception.GroundTruth
         HashSet<Guid> m_Ids = new HashSet<Guid>();
         Guid m_SequenceId = Guid.NewGuid();
 
-        IDatasetReporter m_ActiveReporter = new PerceptionExporter();
+        IDatasetExporter m_ActiveReporter = new PerceptionExporter();
 
         // Always use the property SequenceTimeMs instead
         int m_FrameCountLastUpdatedSequenceTime;
@@ -78,12 +78,12 @@ namespace UnityEngine.Perception.GroundTruth
 
         public SimulationState(string outputDirectory)
         {
-            var mode = (OutputMode)PlayerPrefs.GetInt(outputFormatMode, 0);
+            var mode = PlayerPrefs.GetString(outputFormatMode, nameof(PerceptionExporter));
 
             m_ActiveReporter = mode switch
             {
-                OutputMode.Perception => new PerceptionExporter(),
-                OutputMode.COCO => new CocoExporter(),
+                nameof(PerceptionExporter) => new PerceptionExporter(),
+                nameof(CocoExporter) => new CocoExporter(),
                 _ => m_ActiveReporter
             };
 

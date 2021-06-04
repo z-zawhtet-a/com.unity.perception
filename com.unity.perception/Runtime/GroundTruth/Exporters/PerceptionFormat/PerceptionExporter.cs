@@ -11,28 +11,23 @@ using Unity.Simulation;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
 {
-    public class PerceptionExporter : DatasetExporter
+    public class PerceptionExporter : IDatasetExporter
     {
         const Formatting k_Formatting = Formatting.Indented;
         string outputDirectory = string.Empty;
         int captureFileIndex = 0;
 
-        public override string GetName()
-        {
-            return "Perception";
-        }
-
-        public override void OnSimulationBegin(string directoryName)
+        public void OnSimulationBegin(string directoryName)
         {
             outputDirectory = directoryName;
         }
 
-        public override void OnSimulationEnd()
+        public void OnSimulationEnd()
         {
             // do nothing :-)
         }
 
-        public override void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
+        public void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
         {
             // do nothing :-)
         }
@@ -55,7 +50,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             Manager.Instance.ConsumerFileProduced(path);
         }
 
-        public override Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
+        public Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
         {
             //lazily allocate for fast zero-write frames
             var capturesJArray = new JArray();
@@ -73,7 +68,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             return null;
         }
 
-        public override Task OnCaptureReported(int frame, int width, int height, string filename)
+        public Task OnCaptureReported(int frame, int width, int height, string filename)
         {
             // do nothing :-)
             return null;

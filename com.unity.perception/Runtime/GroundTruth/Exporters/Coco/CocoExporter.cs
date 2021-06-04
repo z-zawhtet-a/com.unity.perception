@@ -8,8 +8,10 @@ using Newtonsoft.Json.Linq;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 {
-    public class CocoExporter : DatasetExporter
+    public class CocoExporter : IDatasetExporter
     {
+        bool m_PrettyPrint = true;
+
         bool m_ReportingObjectDetection;
         bool m_ReportingKeypoints;
 
@@ -39,12 +41,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         Guid m_SessionGuid;
 
-        public override string GetName()
-        {
-            return "COCO";
-        }
-
-        public override void OnSimulationBegin(string directoryName)
+        public void OnSimulationBegin(string directoryName)
         {
             m_DirectoryName = directoryName;
             m_DataCaptured = false;
@@ -90,7 +87,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         }
 
 
-        public override async void OnSimulationEnd()
+        public async void OnSimulationEnd()
         {
             if (!m_DataCaptured) return;
 
@@ -98,12 +95,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
             if (m_ReportingObjectDetection)
             {
-                await WriteObjectDetectionFile(true);
+                await WriteObjectDetectionFile();
             }
 
             if (m_ReportingKeypoints)
             {
-                await WriteKeypointFile(true);
+                await WriteKeypointFile();
             }
 
             File.Delete(m_RgbCaptureFilename);
@@ -159,7 +156,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             aggregated.Append(buffer, start, length);
         }
 
-        async Task WriteObjectDetectionFile(bool prettyPrint = false)
+        async Task WriteObjectDetectionFile()
         {
             var stringBuilder = new StringBuilder();
 
@@ -185,7 +182,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
             var json = stringBuilder.ToString();
 
-            if (prettyPrint)
+            if (m_PrettyPrint)
             {
                 json = JToken.Parse(json).ToString(Formatting.Indented);
             }
@@ -200,7 +197,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             File.Delete(m_ObjectDetectionCategoryFilename);
         }
 
-        async Task WriteKeypointFile(bool prettyPrint = false)
+        async Task WriteKeypointFile()
         {
             var stringBuilder = new StringBuilder();
 
@@ -226,7 +223,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
             var json = stringBuilder.ToString();
 
-            if (prettyPrint)
+            if (m_PrettyPrint)
             {
                 json = JToken.Parse(json).ToString(Formatting.Indented);
             }
@@ -289,7 +286,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
         }
 
-        public override void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
+        public void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
         {
             InitializeCaptureFiles();
 
@@ -333,20 +330,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
         }
 
-        public static string versionEntry = "0.0.1";
-        public static string descriptionEntry = "Description of dataset";
-        public static string contributorEntry = "Anonymous";
-        public static string urlEntry = "Not Set";
+        static string versionEntry = "0.0.1";
+        static string descriptionEntry = "Description of dataset";
+        static string contributorEntry = "Anonymous";
+        static string urlEntry = "Not Set";
 
-        public static CocoTypes.License[] licenses = new []
-        {
-            new CocoTypes.License
-            {
-                id = 0,
-                name = "No License",
-                url = "Not Set"
-            }
-        };
+
 
         static void CreateHeaderInfo(StringBuilder stringBuilder)
         {
@@ -367,6 +356,19 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         static void CreateLicenseInfo(StringBuilder stringBuilder)
         {
+            var licenses = new CocoTypes.Licenses
+            {
+                licenses = new[]
+                {
+                    new CocoTypes.License
+                    {
+                        id = 0,
+                        name = "No License",
+                        url = "Not Set"
+                    }
+                }
+            };
+
             var tmpJson = JsonUtility.ToJson(licenses);
 
             // Remove the start and end '{' from the licenses json
@@ -391,7 +393,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             };
         }
 
-        public override async Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
+        public async Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
         {
             var boxJson = string.Empty;
             var keypointJson = string.Empty;
@@ -489,7 +491,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             return map;
         }
 
-        public override async Task OnCaptureReported(int frame, int width, int height, string filename)
+        public async Task OnCaptureReported(int frame, int width, int height, string filename)
         {
             InitializeCaptureFiles();
 
