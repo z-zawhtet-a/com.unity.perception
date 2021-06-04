@@ -81,8 +81,6 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         public CaptureTriggerMode captureTriggerMode = CaptureTriggerMode.Scheduled;
 
-        public OutputMode outputMode = OutputMode.Perception;
-
         /// <summary>
         /// Have this unscheduled (manual capture) camera affect simulation timings (similar to a scheduled camera) by
         /// requesting a specific frame delta time

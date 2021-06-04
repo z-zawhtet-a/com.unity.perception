@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 {
-    public class CocoExporter : IDatasetReporter
+    public class CocoExporter : DatasetExporter
     {
         bool m_ReportingObjectDetection;
         bool m_ReportingKeypoints;
@@ -39,7 +39,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         Guid m_SessionGuid;
 
-        public void OnSimulationBegin(string directoryName)
+        public override string GetName()
+        {
+            return "COCO";
+        }
+
+        public override void OnSimulationBegin(string directoryName)
         {
             m_DirectoryName = directoryName;
             m_DataCaptured = false;
@@ -85,7 +90,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         }
 
 
-        public async void OnSimulationEnd()
+        public override async void OnSimulationEnd()
         {
             if (!m_DataCaptured) return;
 
@@ -284,7 +289,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
         }
 
-        public void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
+        public override void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
         {
             InitializeCaptureFiles();
 
@@ -386,7 +391,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             };
         }
 
-        public async Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
+        public override async Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
         {
             var boxJson = string.Empty;
             var keypointJson = string.Empty;
@@ -484,7 +489,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             return map;
         }
 
-        public async Task OnCaptureReported(int frame, int width, int height, string filename)
+        public override async Task OnCaptureReported(int frame, int width, int height, string filename)
         {
             InitializeCaptureFiles();
 
