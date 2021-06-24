@@ -17,13 +17,20 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
         string outputDirectory = string.Empty;
         int captureFileIndex = 0;
 
+        public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues)
+        {
+            return string.Empty;
+        }
+
         public void OnSimulationBegin(string directoryName)
         {
+            Debug.Log($"SS - Perception - OnSimBegin");
             outputDirectory = directoryName;
         }
 
         public void OnSimulationEnd()
         {
+            Debug.Log($"SS - Perception - OnSimEnd");
             // do nothing :-)
         }
 
@@ -32,7 +39,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             // do nothing :-)
         }
 
-        void WriteJObjectToFile(JObject jObject, string filename)
+        public static void WriteJObjectToFile(JObject jObject, string directory, string filename)
         {
             var stringWriter = new StringWriter(new StringBuilder(256), CultureInfo.InvariantCulture);
             using (var jsonTextWriter = new JsonTextWriter(stringWriter))
@@ -43,7 +50,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
 
             var contents = stringWriter.ToString();
 
-            var path = Path.Combine(outputDirectory, filename);
+            var path = Path.Combine(directory, filename);
             File.WriteAllText(path, contents);
 
             // TODO what to do about this...
@@ -62,7 +69,9 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             capturesJObject.Add("version", DatasetCapture.SchemaVersion);
             capturesJObject.Add("captures", capturesJArray);
 
-            WriteJObjectToFile(capturesJObject, $"captures_{captureFileIndex:000}.json");
+            Debug.Log("SS - perception - writing");
+
+            WriteJObjectToFile(capturesJObject, outputDirectory, $"captures_{captureFileIndex:000}.json");
 
             // TODO what to do about this...
             return null;
@@ -74,7 +83,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             return null;
         }
 
-        static JToken JObjectFromPendingCapture(SimulationState.PendingCapture pendingCapture)
+        public static JToken JObjectFromPendingCapture(SimulationState.PendingCapture pendingCapture)
         {
             var sensorJObject = new JObject();//new SensorCaptureJson
             sensorJObject["sensor_id"] = pendingCapture.SensorHandle.Id.ToString();
@@ -112,7 +121,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             return capture;
         }
 
-        static JObject JObjectFromAnnotation((Annotation, SimulationState.AnnotationData) annotationInfo)
+        public static JObject JObjectFromAnnotation((Annotation, SimulationState.AnnotationData) annotationInfo)
         {
             var annotationJObject = new JObject();
             annotationJObject["id"] = annotationInfo.Item1.Id.ToString();

@@ -1,5 +1,6 @@
 ﻿using System;
 using Unity.Simulation;
+using UnityEngine.Perception.GroundTruth;
 
 namespace UnityEngine.Perception.Randomization.Scenarios
 {
@@ -36,6 +37,11 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             {
                 DeserializeFromFile(new Uri(Configuration.Instance.SimulationConfig.app_param_uri).LocalPath);
                 constants.instanceIndex = int.Parse(Configuration.Instance.GetInstanceId()) - 1;
+
+//                Debug.Log($"SS - NOT SETTING - SEE IF WE GET the ADVAPI ERROR");
+
+                Debug.Log($"SS - Scenario Import - Setting player prefs ouput format mode: {constants.outputFormat}");
+                PlayerPrefs.SetString(SimulationState.outputFormatMode, constants.outputFormat);
             }
             else
                 base.OnConfigurationImport();

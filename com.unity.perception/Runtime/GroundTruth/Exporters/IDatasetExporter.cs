@@ -6,6 +6,8 @@ namespace UnityEngine.Perception.GroundTruth.Exporters
 {
     public interface IDatasetExporter
     {
+        public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues);
+
         public void OnSimulationBegin(string directoryName);
         public void OnSimulationEnd();
 

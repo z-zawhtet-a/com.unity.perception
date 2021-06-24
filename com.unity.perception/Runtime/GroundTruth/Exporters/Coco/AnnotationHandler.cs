@@ -19,7 +19,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         public static CocoTypes.KeypointCategory ToKeypointCategory(KeypointLabeler.KeypointJson keypointJson)
         {
             var keypoints = new string[keypointJson.key_points.Length];
-            var skeleton = new int[keypointJson.skeleton.Length * 2];
+            var skeleton = new int[keypointJson.skeleton.Length][];
 
             foreach (var kp in keypointJson.key_points)
             {
@@ -29,8 +29,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             var i = 0;
             foreach (var bone in keypointJson.skeleton)
             {
-                skeleton[i++] = bone.joint1;
-                skeleton[i++] = bone.joint2;
+                var joints = new int[]
+                {
+                    bone.joint1,
+                    bone.joint2
+                };
+                skeleton[i++] = joints;
             }
 
             return new CocoTypes.KeypointCategory

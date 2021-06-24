@@ -425,6 +425,9 @@ namespace UnityEngine.Perception.GroundTruth
 
         void CaptureRgbData(Camera cam)
         {
+            // TODO - Steve - this could be a place where we override the capture of the RGB image to allow the
+            // active reporter to determine where we should save RGB images, or even write them out
+
             if (!captureRgbImages)
                 return;
 
@@ -444,6 +447,9 @@ namespace UnityEngine.Perception.GroundTruth
             SetPersistentSensorData("frame", frameCount);
 
             var dxRootPath = $"{rgbDirectory}/{k_RgbFilePrefix}{frameCount}.png";
+
+            captureFilename = SensorHandle.GetRgbCaptureFilename(captureFilename, m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());
+
             SensorHandle.ReportCapture(dxRootPath, SensorSpatialData.FromGameObjects(
                 m_EgoMarker == null ? null : m_EgoMarker.gameObject, gameObject),
                 m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());

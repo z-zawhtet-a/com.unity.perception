@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.Simulation;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 {
@@ -41,14 +42,22 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         Guid m_SessionGuid;
 
+        public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues)
+        {
+            return string.Empty;
+        }
+
         public void OnSimulationBegin(string directoryName)
         {
+            Debug.Log($"SS - COCO - OnSimBegin");
             m_DirectoryName = directoryName;
             m_DataCaptured = false;
         }
 
         async Task AwaitAllWrites()
         {
+            Debug.Log("SS - coco - writing");
+
             WriteOutCategories();
 
             if (m_ObjectDetectionWritingTask != null)
@@ -89,6 +98,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         public async void OnSimulationEnd()
         {
+            Debug.Log($"SS - COCO - OnSimEnd");
             if (!m_DataCaptured) return;
 
             await AwaitAllWrites();
@@ -118,19 +128,20 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
             m_SessionGuid = Guid.NewGuid();
 
-            var prefix = m_DirectoryName + Path.DirectorySeparatorChar + m_SessionGuid;
+            //var prefix = m_DirectoryName + Path.DirectorySeparatorChar + m_SessionGuid;
 
-            m_RgbCaptureFilename = prefix + "_coco_captures.json";
+
+            m_RgbCaptureFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_captures.json");
             m_RgbCaptureStream = File.CreateText(m_RgbCaptureFilename);
 
-            m_ObjectDetectionFilename = prefix + "_coco_box_annotations.json";
+            m_ObjectDetectionFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_box_annotations.json");
             m_ObjectDetectionStream = File.CreateText(m_ObjectDetectionFilename);
 
-            m_KeypointFilename = prefix + "_coco_keypoint_annotations.json";
+            m_KeypointFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_keypoint_annotations.json");
             m_KeypointDetectionStream = File.CreateText(m_KeypointFilename);
 
-            m_ObjectDetectionCategoryFilename = prefix + "_coco_obj_detection_categories.json";
-            m_KeypointCategoryFilename = prefix + "_coco_keypoint_categories.json";
+            m_ObjectDetectionCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_obj_detection_categories.json");
+            m_KeypointCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_keypoint_categories.json");
 
             m_Initialized = true;
         }
@@ -187,11 +198,19 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                 json = JToken.Parse(json).ToString(Formatting.Indented);
             }
 
+            Debug.Log($"SS - COCO - writing to path: {m_DirectoryName}, file: coco_object_detection_annotations.json");
+
             // Write out the files
-            var filename = m_DirectoryName + Path.DirectorySeparatorChar + "coco_object_detection_annotations.json";
+            var filename = Path.Combine(m_DirectoryName, "coco_object_detection_annotations.json");
+
+            Debug.Log($"SS - COCO - file: {filename}");
+
+
             var cocoStream = File.CreateText(filename);
             await cocoStream.WriteAsync(json);
             cocoStream.Close();
+
+            Manager.Instance.ConsumerFileProduced(filename);
 
             File.Delete(m_ObjectDetectionFilename);
             File.Delete(m_ObjectDetectionCategoryFilename);
@@ -229,10 +248,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
 
             // Write out the files
-            var filename = m_DirectoryName + Path.DirectorySeparatorChar + "coco_keypoint_annotations.json";
+            var filename = Path.Combine(m_DirectoryName, "coco_keypoint_annotations.json");
             var cocoStream = File.CreateText(filename);
             await cocoStream.WriteAsync(json);
             cocoStream.Close();
+
+            Manager.Instance.ConsumerFileProduced(filename);
 
             File.Delete(m_KeypointFilename);
             File.Delete(m_KeypointCategoryFilename);
@@ -334,8 +355,6 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         static string descriptionEntry = "Description of dataset";
         static string contributorEntry = "Anonymous";
         static string urlEntry = "Not Set";
-
-
 
         static void CreateHeaderInfo(StringBuilder stringBuilder)
         {

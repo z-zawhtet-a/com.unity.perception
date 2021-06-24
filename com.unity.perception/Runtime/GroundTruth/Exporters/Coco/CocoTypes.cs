@@ -137,7 +137,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         public class KeypointCategory : ObjectDetectionCategory
         {
             public string[] keypoints;
-            public int[] skeleton;
+            public int[][] skeleton;
         }
 
         [Serializable]

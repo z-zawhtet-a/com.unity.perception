@@ -124,6 +124,7 @@ namespace UnityEngine.Perception.GroundTruth
             m_WriteToDiskSampler.Begin();
 
             var path = Path.Combine(OutputDirectory, filename);
+            Debug.Log($"ss - sensors.json - {path}");
             File.WriteAllText(path, contents);
             Manager.Instance.ConsumerFileProduced(path);
             m_WriteToDiskSampler.End();
@@ -158,7 +159,7 @@ namespace UnityEngine.Perception.GroundTruth
 
             void Write(List<PendingCapture> pendingCaptures, SimulationState simulationState, int captureFileIndex)
             {
-                m_ActiveReporter.ProcessPendingCaptures(pendingCaptures, simulationState);
+                GetActiveReporter()?.ProcessPendingCaptures(pendingCaptures, simulationState);
 #if false
                 simulationState.m_SerializeCapturesAsyncSampler.Begin();
 

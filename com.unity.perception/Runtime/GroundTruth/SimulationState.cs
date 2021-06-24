@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.Perception.GroundTruth.Exporters;
 using UnityEngine.Perception.GroundTruth.Exporters.Coco;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
+using UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew;
 using UnityEngine.Profiling;
 
 namespace UnityEngine.Perception.GroundTruth
@@ -23,7 +24,7 @@ namespace UnityEngine.Perception.GroundTruth
         HashSet<Guid> m_Ids = new HashSet<Guid>();
         Guid m_SequenceId = Guid.NewGuid();
 
-        IDatasetExporter m_ActiveReporter = new PerceptionExporter();
+        IDatasetExporter _ActiveReporter = null;
 
         // Always use the property SequenceTimeMs instead
         int m_FrameCountLastUpdatedSequenceTime;
@@ -78,14 +79,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         public SimulationState(string outputDirectory)
         {
-            var mode = PlayerPrefs.GetString(outputFormatMode, nameof(PerceptionExporter));
-
-            m_ActiveReporter = mode switch
-            {
-                nameof(PerceptionExporter) => new PerceptionExporter(),
-                nameof(CocoExporter) => new CocoExporter(),
-                _ => m_ActiveReporter
-            };
+            _ActiveReporter = null;
 
             PlayerPrefs.SetString(defaultOutputBaseDirectory, Configuration.Instance.GetStorageBasePath());
             m_OutputDirectoryName = outputDirectory;
@@ -119,7 +113,43 @@ namespace UnityEngine.Perception.GroundTruth
             PlayerPrefs.SetString(latestOutputDirectoryKey, Manager.Instance.GetDirectoryFor("", basePath));
             IsRunning = true;
 
-            m_ActiveReporter?.OnSimulationBegin(Manager.Instance.GetDirectoryFor(m_OutputDirectoryName));
+
+        }
+
+        IDatasetExporter GetActiveReporter()
+        {
+            if (_ActiveReporter != null) return _ActiveReporter;
+
+            var mode = PlayerPrefs.GetString(outputFormatMode, nameof(CocoExporter));
+#if false
+            // TODO figure out how to do this with just the class name and not have to have the switch
+
+            var exporter = Activator.CreateInstance(Type.GetType(mode) ?? typeof(PerceptionExporter));
+
+            if (exporter is IDatasetExporter casted)
+            {
+                m_ActiveReporter = casted;
+            }
+#else
+            Debug.Log($"SS - Sim State setting active reporter: {mode}");
+            _ActiveReporter = mode switch
+            {
+                nameof(PerceptionExporter) => new PerceptionExporter(),
+                nameof(CocoExporter) => new CocoExporter(),
+                nameof(PerceptionNewExporter) => new PerceptionNewExporter(),
+                _ => new PerceptionExporter()
+            };
+#endif
+            Debug.Log("Calling SS::OnSimulationBegin");
+            _ActiveReporter?.OnSimulationBegin(Manager.Instance.GetDirectoryFor(m_OutputDirectoryName));
+
+            return _ActiveReporter;
+        }
+
+        public string GetRgbCaptureFilename(string defaultFilename, params(string, object)[] additionalSensorValues)
+        {
+            var directory = GetActiveReporter()?.GetRgbCaptureFilename(additionalSensorValues);
+            return directory == string.Empty ? defaultFilename : directory;
         }
 
         /// <summary>
@@ -320,7 +350,7 @@ namespace UnityEngine.Perception.GroundTruth
                 }
             }
 
-            m_ActiveReporter.OnCaptureReported(frameCount, width, height, filename);
+            GetActiveReporter()?.OnCaptureReported(frameCount, width, height, filename);
         }
 
         static string GetFormatFromFilename(string filename)
@@ -657,8 +687,10 @@ namespace UnityEngine.Perception.GroundTruth
             Time.captureDeltaTime = 0;
             IsRunning = false;
 
-            m_ActiveReporter?.OnSimulationEnd();
+            Debug.Log($"Calling SS::OnSimulationEnd");
+            GetActiveReporter()?.OnSimulationEnd();
         }
+
 
         public AnnotationDefinition RegisterAnnotationDefinition<TSpec>(string name, TSpec[] specValues, string description, string format, Guid id)
         {
@@ -667,7 +699,7 @@ namespace UnityEngine.Perception.GroundTruth
 
             RegisterAdditionalInfoType(name, specValues, description, format, id, AdditionalInfoKind.Annotation);
 
-            m_ActiveReporter.OnAnnotationRegistered(id, specValues); // <- Not sure about this one either
+            GetActiveReporter()?.OnAnnotationRegistered(id, specValues); // <- Not sure about this one either
 
             return new AnnotationDefinition(id);
         }

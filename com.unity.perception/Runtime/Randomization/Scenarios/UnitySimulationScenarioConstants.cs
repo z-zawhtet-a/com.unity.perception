@@ -25,5 +25,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         [Tooltip("The Unity Simulation instance index of the currently executing worker.")]
         public int instanceIndex;
+
+        public string outputFormat;
     }
 }
