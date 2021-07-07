@@ -71,7 +71,7 @@ codecoverage_windows_{{suite.name}}_{{editor.version}}:
     - pip config set global.index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple --upgrade --user
     - git clone git@github.cds.internal.unity3d.com:unity/utr.git utr
-    - unity-downloader-cli -u {{ editor.version }} -c editor -c StandaloneSupport-IL2CPP,CloudRendering -c Linux --wait --published
+    - unity-downloader-cli -u {{ editor.version }} -c editor -c StandaloneSupport-IL2CPP -c CloudRendering -c Linux --wait --published
     {% if suite.name == "standalone" %}
     - DISPLAY=:0.0 utr/utr --testproject=./TestProjects/{{project.name}} --editor-location=.Editor --reruncount=2 --artifacts_path=test-results --stdout-filter=minimal --extra-editor-arg="--force-vulkan" {{suite.args}}StandaloneLinux64
     {% else if suite.name == "cloudrendering" and editor == "2020.3.13f1" %}
