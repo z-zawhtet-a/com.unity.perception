@@ -83,6 +83,9 @@ suites:
   - name: standalone
     display_name: standalone
     args: --suite=playmode --platform=
+  - name: cloudrendering
+    display_name: cloudrendering
+    args: --suite=playmode --platform=
   - name: editmode
     display_name: editmode
     args: --suite=playmode --suite=editor --platform=Editor
