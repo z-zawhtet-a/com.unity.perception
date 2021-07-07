@@ -18,7 +18,7 @@
     - unity-downloader-cli -u {{ editor.version }} -c editor -c StandaloneSupport-IL2CPP -c Linux --wait --published
     {% if suite.name == "standalone" %}
     - utr/utr --testproject=./TestProjects/{{project.name}} --editor-location=./.Editor --reruncount=2 --artifacts_path=test-results --stdout-filter=minimal --extra-editor-arg="--force-d3d11" {{suite.args}}StandaloneWindows64
-    {% else %}
+    {% else if suite.name != "cloudrendering" %}
     - utr/utr --testproject=./TestProjects/{{project.name}} --editor-location=./.Editor --reruncount=2 --artifacts_path=test-results --stdout-filter=minimal --extra-editor-arg="--force-d3d11" {{suite.args}}
     {% endif %}
   artifacts:
