@@ -135,20 +135,25 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             m_RgbCaptureStream = File.CreateText(m_RgbCaptureFilename);
 
             m_ObjectDetectionFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_box_annotations.json");
-            m_ObjectDetectionStream = File.CreateText(m_ObjectDetectionFilename);
+            if (m_ReportingObjectDetection)
+            {
+                m_ObjectDetectionStream = File.CreateText(m_ObjectDetectionFilename);
+                m_ObjectDetectionCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_obj_detection_categories.json");
+            }
 
             m_KeypointFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_keypoint_annotations.json");
-            m_KeypointDetectionStream = File.CreateText(m_KeypointFilename);
-
-            m_ObjectDetectionCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_obj_detection_categories.json");
-            m_KeypointCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_keypoint_categories.json");
+            if (m_ReportingKeypoints)
+            {
+                m_KeypointDetectionStream = File.CreateText(m_KeypointFilename);
+                m_KeypointCategoryFilename = Path.Combine(m_DirectoryName, m_SessionGuid + "_coco_keypoint_categories.json");
+            }
 
             m_Initialized = true;
         }
 
         static void AggregateFile(string filename, StringBuilder aggregated, bool skipFirstCharacter = false)
         {
-            using var sr = new StreamReader(filename);
+            var sr = new StreamReader(filename);
 
             var length = (int)sr.BaseStream.Length;
             var start = 0;
@@ -165,6 +170,8 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
 
             aggregated.Append(buffer, start, length);
+
+            sr.Dispose();
         }
 
         async Task WriteObjectDetectionFile()
@@ -251,7 +258,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             var filename = Path.Combine(m_DirectoryName, "coco_keypoint_annotations.json");
             var cocoStream = File.CreateText(filename);
             await cocoStream.WriteAsync(json);
-            cocoStream.Close();
+            cocoStream.Dispose();
 
             Manager.Instance.ConsumerFileProduced(filename);
 
@@ -309,8 +316,6 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         public void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
         {
-            InitializeCaptureFiles();
-
             if (annotationId.ToString() == BoundingBox2DLabeler.annotationId)
             {
                 m_ReportingObjectDetection = true;
@@ -465,13 +470,19 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                 await m_ObjectDetectionWritingTask;
 
             if (boxJson != string.Empty)
+            {
+                InitializeCaptureFiles();
                 m_ObjectDetectionWritingTask = m_ObjectDetectionStream.WriteAsync(boxJson);
+            }
 
             if (m_KeypointDetectionWritingTask != null)
                 await m_KeypointDetectionWritingTask;
 
             if (keypointJson != string.Empty)
+            {
+                InitializeCaptureFiles();
                 m_KeypointDetectionWritingTask = m_KeypointDetectionStream.WriteAsync(keypointJson);
+            }
         }
 
         static Dictionary<int, CocoTypes.ObjectDetectionAnnotation> ProcessBoundingBoxAnnotations(IEnumerable<object> annotations)

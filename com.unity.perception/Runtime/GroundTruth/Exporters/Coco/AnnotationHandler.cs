@@ -6,14 +6,15 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
     {
         public static object HandleAnnotation(AsyncAnnotation asyncAnnotation, object annotation)
         {
-            object converted = annotation switch
+            switch (annotation)
             {
-                BoundingBox2DLabeler.BoundingBoxValue bbox => CocoTypes.ObjectDetectionAnnotation.FromBoundingBoxValue(bbox),
-                KeypointLabeler.KeypointEntry keypoint => CocoTypes.KeypointAnnotation.FromKeypointValue(keypoint),
-                _ => null
-            };
+                case BoundingBox2DLabeler.BoundingBoxValue bbox:
+                    return CocoTypes.ObjectDetectionAnnotation.FromBoundingBoxValue(bbox);
+                case KeypointLabeler.KeypointEntry keypoint:
+                    return CocoTypes.KeypointAnnotation.FromKeypointValue(keypoint);
+            }
 
-            return converted;
+            return null;
         }
 
         public static CocoTypes.KeypointCategory ToKeypointCategory(KeypointLabeler.KeypointJson keypointJson)

@@ -132,13 +132,23 @@ namespace UnityEngine.Perception.GroundTruth
             }
 #else
             Debug.Log($"SS - Sim State setting active reporter: {mode}");
-            _ActiveReporter = mode switch
+
+            switch (mode)
             {
-                nameof(PerceptionExporter) => new PerceptionExporter(),
-                nameof(CocoExporter) => new CocoExporter(),
-                nameof(PerceptionNewExporter) => new PerceptionNewExporter(),
-                _ => new PerceptionExporter()
-            };
+                case nameof(PerceptionExporter):
+                    _ActiveReporter = new PerceptionExporter();
+                    break;
+                case nameof(CocoExporter):
+                    _ActiveReporter = new CocoExporter();
+                    break;
+                case nameof(PerceptionNewExporter):
+                    _ActiveReporter = new PerceptionNewExporter();
+                    break;
+                default:
+                    _ActiveReporter = new PerceptionExporter();
+                    break;
+            }
+
 #endif
             Debug.Log("Calling SS::OnSimulationBegin");
             _ActiveReporter?.OnSimulationBegin(Manager.Instance.GetDirectoryFor(m_OutputDirectoryName));
