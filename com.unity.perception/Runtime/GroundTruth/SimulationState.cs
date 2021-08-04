@@ -10,6 +10,7 @@ using Unity.Simulation;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth.Exporters;
 using UnityEngine.Perception.GroundTruth.Exporters.Coco;
+using UnityEngine.Perception.GroundTruth.Exporters.CocoHybrid;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew;
 using UnityEngine.Profiling;
@@ -139,7 +140,8 @@ namespace UnityEngine.Perception.GroundTruth
                     _ActiveReporter = new PerceptionExporter();
                     break;
                 case nameof(CocoExporter):
-                    _ActiveReporter = new CocoExporter();
+                    //_ActiveReporter = new CocoExporter();
+                    _ActiveReporter = new CocoHybridExporter();
                     break;
                 case nameof(PerceptionNewExporter):
                     _ActiveReporter = new PerceptionNewExporter();
