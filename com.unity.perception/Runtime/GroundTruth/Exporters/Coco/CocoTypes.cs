@@ -111,7 +111,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                 var outKeypoint = new KeypointAnnotation()
                 {
                     id = (int)keypoint.instance_id,
-                    image_id = -1,
+                    image_id = keypoint.frame,
                     category_id = keypoint.label_id,
                     segmentation = new float[]{},
                     area = 0,
@@ -140,10 +140,14 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             public int[][] skeleton;
         }
 
+
+
         [Serializable]
         public class KeypointCategories
         {
             public KeypointCategory[] categories;
         }
     }
+
+
 }

@@ -251,7 +251,7 @@ namespace UnityEngine.Perception.GroundTruth
             m_AsyncAnnotations[m_CurrentFrame] = (annotation, keypoints);
 
             foreach (var label in LabelManager.singleton.registeredLabels)
-                ProcessLabel(label);
+                ProcessLabel(m_CurrentFrame, label);
         }
 
         // ReSharper disable InconsistentNaming
@@ -267,6 +267,9 @@ namespace UnityEngine.Perception.GroundTruth
             /// The label id of the entity
             /// </summary>
             public int label_id;
+
+            public int frame;
+
             /// <summary>
             /// The instance id of the entity
             /// </summary>
@@ -378,7 +381,7 @@ namespace UnityEngine.Perception.GroundTruth
             return false;
         }
 
-        void ProcessLabel(Labeling labeledEntity)
+        void ProcessLabel(int frame, Labeling labeledEntity)
         {
             if (!idLabelConfig.TryGetLabelEntryFromInstanceId(labeledEntity.instanceId, out var labelEntry))
                 return;
@@ -399,6 +402,7 @@ namespace UnityEngine.Perception.GroundTruth
 
                 cached.keypoints.instance_id = labeledEntity.instanceId;
                 cached.keypoints.label_id = labelEntry.id;
+                cached.keypoints.frame = -1;
                 cached.keypoints.template_guid = activeTemplate.templateID;
 
                 cached.keypoints.keypoints = new Keypoint[activeTemplate.keypoints.Length];
@@ -427,6 +431,7 @@ namespace UnityEngine.Perception.GroundTruth
             }
 
             var cachedData = m_KnownStatus[labeledEntity.instanceId];
+            cachedData.keypoints.frame = frame;
 
             if (cachedData.status)
             {
