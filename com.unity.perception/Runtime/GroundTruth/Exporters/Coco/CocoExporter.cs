@@ -309,7 +309,21 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                     }
                 }
 
+#if false
                 var json = JsonUtility.ToJson(merged);
+#else
+                var builder = new StringBuilder();
+                var sw = new StringWriter(builder);
+
+                var serializer = new JsonSerializer();
+
+                using (var writer = new JsonTextWriter(sw))
+                {
+                    serializer.Serialize(writer, merged);
+                }
+
+                var json = builder.ToString();
+#endif
                 m_KeypointCategoryWritingTask = m_KeypointCategoryStream.WriteAsync(json);
             }
         }
@@ -461,7 +475,18 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                         else
                             keypointJson += ",";
 
-                        keypointJson += JsonUtility.ToJson(kp);
+                        var builder = new StringBuilder();
+                        var stringWriter = new StringWriter(builder);
+
+                        var serializer = new JsonSerializer();
+
+                        using (var writer = new JsonTextWriter(stringWriter))
+                        {
+                            serializer.Serialize(writer, kp);
+                        }
+
+                        keypointJson += builder.ToString();
+
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 {
@@ -53,12 +54,19 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         [Serializable]
         public class ObjectDetectionAnnotation
         {
+            [JsonProperty(Order = -2)]
             public int id;
+            [JsonProperty(Order = -2)]
             public int image_id;
+            [JsonProperty(Order = -2)]
             public int category_id;
+            [JsonProperty(Order = -2)]
             public float[] segmentation;
+            [JsonProperty(Order = -2)]
             public float area;
+            [JsonProperty(Order = -2)]
             public float[] bbox;
+            [JsonProperty(Order = -2)]
             public int iscrowd;
 
             public static ObjectDetectionAnnotation FromBoundingBoxValue(BoundingBox2DLabeler.BoundingBoxValue bbox)
@@ -79,9 +87,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
         [Serializable]
         public class ObjectDetectionCategory
         {
+            [JsonProperty(Order = -2)]
             public int id;
-            public string name;
-            public string supercategory;
+            [JsonProperty(Order = -2)]
+            public string name = string.Empty;
+            [JsonProperty(Order = -2)]
+            public string supercategory = string.Empty;
         }
 
         [Serializable]
@@ -92,8 +103,9 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         public class KeypointAnnotation : ObjectDetectionAnnotation
         {
-            public float[] keypoints;
             public int num_keypoints;
+            public float[] keypoints;
+
 
             public void CopyObjectDetectionData(ObjectDetectionAnnotation objDetection)
             {
