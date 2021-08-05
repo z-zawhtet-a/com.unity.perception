@@ -357,18 +357,24 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             if (annotationId.ToString() == KeypointLabeler.annotationId)
             {
                 m_ReportingKeypoints = true;
-                if (values[0] is KeypointLabeler.KeypointJson keypointJson)
+                var categories = new CocoTypes.KeypointCategory[values.Length];
+                var i = 0;
+
+                foreach (var value in values)
                 {
-                    m_KeypointCategories = new CocoTypes.KeypointCategories
+                    if (value is KeypointLabeler.KeypointJson keypointJson)
                     {
-                        categories = new []
-                        {
-                            AnnotationHandler.ToKeypointCategory(keypointJson)
-                        }
-                    };
+                        categories[i++] = AnnotationHandler.ToKeypointCategory(keypointJson);
+                    }
                 }
+
+                m_KeypointCategories = new CocoTypes.KeypointCategories
+                {
+                    categories = categories
+                };
             }
         }
+
 
         static string versionEntry = "0.0.1";
         static string descriptionEntry = "Description of dataset";

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 {
@@ -40,6 +40,9 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
             return new CocoTypes.KeypointCategory
             {
+                id = keypointJson.label_id,
+                name = keypointJson.label_name,
+                supercategory = keypointJson.label_name,
                 keypoints = keypoints,
                 skeleton = skeleton
             };

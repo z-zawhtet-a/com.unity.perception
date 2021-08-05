@@ -93,7 +93,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (idLabelConfig == null)
                 throw new InvalidOperationException($"{nameof(KeypointLabeler)}'s idLabelConfig field must be assigned");
 
-            m_AnnotationDefinition = DatasetCapture.RegisterAnnotationDefinition("keypoints", new []{TemplateToJson(activeTemplate)},
+            m_AnnotationDefinition = DatasetCapture.RegisterAnnotationDefinition("keypoints", TemplateToJson(activeTemplate, idLabelConfig),
                 "pixel coordinates of keypoints in a model, along with skeletal connectivity data", id: new Guid(annotationId));
 
             // Texture to use in case the template does not contain a texture for the joints or the skeletal connections
@@ -470,6 +470,7 @@ namespace UnityEngine.Perception.GroundTruth
                 var cachedKeypointEntry = cachedData.keypoints;
                 var keypointEntry = new KeypointEntry()
                 {
+                    frame = cachedKeypointEntry.frame,
                     instance_id = cachedKeypointEntry.instance_id,
                     keypoints = cachedKeypointEntry.keypoints.ToArray(),
                     label_id = cachedKeypointEntry.label_id,
@@ -583,6 +584,8 @@ namespace UnityEngine.Perception.GroundTruth
         [Serializable]
         public struct KeypointJson
         {
+            public int label_id;
+            public string label_name;
             public string template_id;
             public string template_name;
             public JointJson[] key_points;
@@ -591,35 +594,45 @@ namespace UnityEngine.Perception.GroundTruth
         // ReSharper restore InconsistentNaming
         // ReSharper restore NotAccessedField.Local
 
-        KeypointJson TemplateToJson(KeypointTemplate input)
+        KeypointJson[] TemplateToJson(KeypointTemplate input, IdLabelConfig labelConfig)
         {
-            var json = new KeypointJson();
-            json.template_id = input.templateID;
-            json.template_name = input.templateName;
-            json.key_points = new JointJson[input.keypoints.Length];
-            json.skeleton = new SkeletonJson[input.skeleton.Length];
+            var jsons = new KeypointJson[labelConfig.labelEntries.Count];
+            var idx = 0;
 
-            for (var i = 0; i < input.keypoints.Length; i++)
+            foreach (var cfg in labelConfig.labelEntries)
             {
-                json.key_points[i] = new JointJson
+                var json = new KeypointJson();
+                json.label_id = cfg.id;
+                json.label_name = cfg.label;
+                json.template_id = input.templateID;
+                json.template_name = input.templateName;
+                json.key_points = new JointJson[input.keypoints.Length];
+                json.skeleton = new SkeletonJson[input.skeleton.Length];
+
+                for (var i = 0; i < input.keypoints.Length; i++)
                 {
-                    label = input.keypoints[i].label,
-                    index = i,
-                    color = input.keypoints[i].color
-                };
+                    json.key_points[i] = new JointJson
+                    {
+                        label = input.keypoints[i].label,
+                        index = i,
+                        color = input.keypoints[i].color
+                    };
+                }
+
+                for (var i = 0; i < input.skeleton.Length; i++)
+                {
+                    json.skeleton[i] = new SkeletonJson()
+                    {
+                        joint1 = input.skeleton[i].joint1,
+                        joint2 = input.skeleton[i].joint2,
+                        color = input.skeleton[i].color
+                    };
+                }
+
+                jsons[idx++] = json;
             }
 
-            for (var i = 0; i < input.skeleton.Length; i++)
-            {
-                json.skeleton[i] = new SkeletonJson()
-                {
-                    joint1 = input.skeleton[i].joint1,
-                    joint2 = input.skeleton[i].joint2,
-                    color = input.skeleton[i].color
-                };
-            }
-
-            return json;
+            return jsons;
         }
     }
 }
