@@ -31,20 +31,26 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         protected sealed override bool isScenarioComplete => currentIteration >= constants.totalIterations;
 
         /// <inheritdoc/>
-        protected override void OnConfigurationImport()
+        protected override void LoadConfigurationAsset()
         {
             if (Configuration.Instance.IsSimulationRunningInCloud())
             {
-                DeserializeFromFile(new Uri(Configuration.Instance.SimulationConfig.app_param_uri).LocalPath);
-                constants.instanceIndex = int.Parse(Configuration.Instance.GetInstanceId()) - 1;
-
-//                Debug.Log($"SS - NOT SETTING - SEE IF WE GET the ADVAPI ERROR");
-
-                Debug.Log($"SS - Scenario Import - Setting player prefs ouput format mode: {constants.outputFormat}");
+                var filePath = new Uri(Configuration.Instance.SimulationConfig.app_param_uri).LocalPath;
+                LoadConfigurationFromFile(filePath);
                 PlayerPrefs.SetString(SimulationState.outputFormatMode, constants.outputFormat);
             }
             else
-                base.OnConfigurationImport();
+            {
+                base.LoadConfigurationAsset();
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override void DeserializeConfiguration()
+        {
+            base.DeserializeConfiguration();
+            if (Configuration.Instance.IsSimulationRunningInCloud())
+                constants.instanceIndex = int.Parse(Configuration.Instance.GetInstanceId()) - 1;
             currentIteration = constants.instanceIndex;
         }
 

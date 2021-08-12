@@ -446,9 +446,10 @@ namespace UnityEngine.Perception.GroundTruth
             SetPersistentSensorData("full_path", captureFilename);
             SetPersistentSensorData("frame", frameCount);
 
-            var dxRootPath = $"{rgbDirectory}/{k_RgbFilePrefix}{frameCount}.png";
+            // Record the camera's projection type (orthographic or perspective)
+            SetPersistentSensorData("projection", cam.orthographic ? "orthographic" : "perspective");
 
-            captureFilename = SensorHandle.GetRgbCaptureFilename(captureFilename, m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());
+            var dxRootPath = $"{rgbDirectory}/{k_RgbFilePrefix}{Time.frameCount}.png";
 
             SensorHandle.ReportCapture(dxRootPath, SensorSpatialData.FromGameObjects(
                 m_EgoMarker == null ? null : m_EgoMarker.gameObject, gameObject),
