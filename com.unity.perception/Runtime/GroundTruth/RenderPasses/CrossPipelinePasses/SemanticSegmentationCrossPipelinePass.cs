@@ -57,7 +57,7 @@ namespace UnityEngine.Perception.GroundTruth
             s_LastFrameExecuted = Time.frameCount;
             var renderList = CreateRendererListDesc(camera, cullingResult, "FirstPass", 0, m_OverrideMaterial, -1);
             cmd.ClearRenderTarget(true, true, m_LabelConfig.skyColor);
-            DrawRendererList(renderContext, cmd, RendererList.Create(renderList));
+            //DrawRendererList(renderContext, cmd, RendererList.Create(renderList));
         }
 
         public override void SetupMaterialProperties(

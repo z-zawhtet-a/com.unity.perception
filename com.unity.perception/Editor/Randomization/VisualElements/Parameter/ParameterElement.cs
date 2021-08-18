@@ -98,7 +98,7 @@ namespace UnityEditor.Perception.Randomization
                     m_SerializedProperty.serializedObject.ApplyModifiedProperties();
 
                     listView.itemsSource = categoricalParameter.probabilities;
-                    listView.Refresh();
+                    listView.Rebuild();
                 };
             }
 
@@ -137,7 +137,7 @@ namespace UnityEditor.Perception.Randomization
 
                 m_SerializedProperty.serializedObject.ApplyModifiedProperties();
                 listView.itemsSource = categoricalParameter.probabilities;
-                listView.Refresh();
+                listView.Rebuild();
                 listView.ScrollToItem(probabilitiesProperty.arraySize);
             };
 
@@ -168,7 +168,7 @@ namespace UnityEditor.Perception.Randomization
 
                     m_SerializedProperty.serializedObject.ApplyModifiedProperties();
                     listView.itemsSource = categoricalParameter.probabilities;
-                    listView.Refresh();
+                    listView.Rebuild();
                 };
             else
                 addFolderButton.style.display = new StyleEnum<DisplayStyle>(DisplayStyle.None);
@@ -180,7 +180,7 @@ namespace UnityEditor.Perception.Randomization
                 optionsProperty.arraySize = 0;
                 m_SerializedProperty.serializedObject.ApplyModifiedProperties();
                 listView.itemsSource = categoricalParameter.probabilities;
-                listView.Refresh();
+                listView.Rebuild();
             };
 
             var scrollView = listView.Q<ScrollView>();
@@ -224,7 +224,7 @@ namespace UnityEditor.Perception.Randomization
 
                     m_SerializedProperty.serializedObject.ApplyModifiedProperties();
                     listView.itemsSource = categoricalParameter.probabilities;
-                    listView.Refresh();
+                    listView.Rebuild();
                 });
 
             m_PropertiesContainer.Add(template);

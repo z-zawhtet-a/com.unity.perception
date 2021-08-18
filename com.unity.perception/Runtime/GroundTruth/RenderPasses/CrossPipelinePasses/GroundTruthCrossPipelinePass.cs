@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RendererUtils;
 
 namespace UnityEngine.Perception.GroundTruth
 {
@@ -100,18 +101,18 @@ namespace UnityEngine.Perception.GroundTruth
             renderContext.ExecuteCommandBuffer(cmd);
             cmd.Clear();
 
-            if (rendererList.stateBlock == null)
-                renderContext.DrawRenderers(
-                    rendererList.cullingResult, ref rendererList.drawSettings, ref rendererList.filteringSettings);
-            else
-            {
-                var renderStateBlock = rendererList.stateBlock.Value;
-                renderContext.DrawRenderers(
-                    rendererList.cullingResult,
-                    ref rendererList.drawSettings,
-                    ref rendererList.filteringSettings,
-                    ref renderStateBlock);
-            }
+            // if (rendererList.stateBlock == null)
+            //     renderContext.DrawRenderers(
+            //         rendererList.cullingResult, ref rendererList.drawSettings, ref rendererList.filteringSettings);
+            // else
+            // {
+            //     var renderStateBlock = rendererList.stateBlock.Value;
+            //     renderContext.DrawRenderers(
+            //         rendererList.cullingResult,
+            //         ref rendererList.drawSettings,
+            //         ref rendererList.filteringSettings,
+            //         ref renderStateBlock);
+            // }
         }
 
         public abstract void SetupMaterialProperties(

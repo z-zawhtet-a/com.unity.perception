@@ -3,6 +3,7 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RendererUtils;
 
 namespace UnityEngine.Perception.GroundTruth
 {
@@ -58,7 +59,7 @@ namespace UnityEngine.Perception.GroundTruth
                 var result = CreateRendererListDesc(
                     camera, cullingResult, "FirstPass", 0, m_OverrideMaterial, m_LayerMask);
 
-                DrawRendererList(renderContext, cmd, RendererList.Create(result));
+                //DrawRendererList(renderContext, cmd, RendererList.Create(result));
             }
         }
 
