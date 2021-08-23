@@ -37,6 +37,12 @@ namespace UnityEngine.Perception.GroundTruth
         /// The GUID id to associate with the annotations produced by this labeler.
         /// </summary>
         public string annotationId = "8b3ef246-daa7-4dd5-a0e8-a943f6e7f8c2";
+
+        /// <summary>
+        /// The annotation ID that the COCO exporter will use to know whether an ID is coming from a keypoint labeler.
+        /// </summary>
+        public static string annotationIdForCocoExport = "8b3ef246-daa7-4dd5-a0e8-a943f6e7f8c2";
+
         /// <summary>
         /// The <see cref="IdLabelConfig"/> which associates objects with labels.
         /// </summary>
@@ -93,7 +99,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (idLabelConfig == null)
                 throw new InvalidOperationException($"{nameof(KeypointLabeler)}'s idLabelConfig field must be assigned");
 
-            m_AnnotationDefinition = DatasetCapture.RegisterAnnotationDefinition("keypoints", new []{TemplateToJson(activeTemplate)},
+            m_AnnotationDefinition = DatasetCapture.RegisterAnnotationDefinition("keypoints", TemplateToJson(activeTemplate, idLabelConfig),
                 "pixel coordinates of keypoints in a model, along with skeletal connectivity data", id: new Guid(annotationId));
 
             // Texture to use in case the template does not contain a texture for the joints or the skeletal connections
@@ -251,7 +257,7 @@ namespace UnityEngine.Perception.GroundTruth
             m_AsyncAnnotations[m_CurrentFrame] = (annotation, keypoints);
 
             foreach (var label in LabelManager.singleton.registeredLabels)
-                ProcessLabel(label);
+                ProcessLabel(m_CurrentFrame, label);
         }
 
         // ReSharper disable InconsistentNaming
@@ -267,6 +273,9 @@ namespace UnityEngine.Perception.GroundTruth
             /// The label id of the entity
             /// </summary>
             public int label_id;
+
+            public int frame;
+
             /// <summary>
             /// The instance id of the entity
             /// </summary>
@@ -378,7 +387,7 @@ namespace UnityEngine.Perception.GroundTruth
             return false;
         }
 
-        void ProcessLabel(Labeling labeledEntity)
+        void ProcessLabel(int frame, Labeling labeledEntity)
         {
             if (!idLabelConfig.TryGetLabelEntryFromInstanceId(labeledEntity.instanceId, out var labelEntry))
                 return;
@@ -399,6 +408,7 @@ namespace UnityEngine.Perception.GroundTruth
 
                 cached.keypoints.instance_id = labeledEntity.instanceId;
                 cached.keypoints.label_id = labelEntry.id;
+                cached.keypoints.frame = -1;
                 cached.keypoints.template_guid = activeTemplate.templateID;
 
                 cached.keypoints.keypoints = new Keypoint[activeTemplate.keypoints.Length];
@@ -427,6 +437,7 @@ namespace UnityEngine.Perception.GroundTruth
             }
 
             var cachedData = m_KnownStatus[labeledEntity.instanceId];
+            cachedData.keypoints.frame = frame;
 
             if (cachedData.status)
             {
@@ -465,6 +476,7 @@ namespace UnityEngine.Perception.GroundTruth
                 var cachedKeypointEntry = cachedData.keypoints;
                 var keypointEntry = new KeypointEntry()
                 {
+                    frame = cachedKeypointEntry.frame,
                     instance_id = cachedKeypointEntry.instance_id,
                     keypoints = cachedKeypointEntry.keypoints.ToArray(),
                     label_id = cachedKeypointEntry.label_id,
@@ -560,7 +572,7 @@ namespace UnityEngine.Perception.GroundTruth
         // ReSharper disable InconsistentNaming
         // ReSharper disable NotAccessedField.Local
         [Serializable]
-        struct JointJson
+        public struct JointJson
         {
             public string label;
             public int index;
@@ -568,7 +580,7 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         [Serializable]
-        struct SkeletonJson
+        public struct SkeletonJson
         {
             public int joint1;
             public int joint2;
@@ -576,8 +588,10 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         [Serializable]
-        struct KeypointJson
+        public struct KeypointJson
         {
+            public int label_id;
+            public string label_name;
             public string template_id;
             public string template_name;
             public JointJson[] key_points;
@@ -586,35 +600,45 @@ namespace UnityEngine.Perception.GroundTruth
         // ReSharper restore InconsistentNaming
         // ReSharper restore NotAccessedField.Local
 
-        KeypointJson TemplateToJson(KeypointTemplate input)
+        KeypointJson[] TemplateToJson(KeypointTemplate input, IdLabelConfig labelConfig)
         {
-            var json = new KeypointJson();
-            json.template_id = input.templateID;
-            json.template_name = input.templateName;
-            json.key_points = new JointJson[input.keypoints.Length];
-            json.skeleton = new SkeletonJson[input.skeleton.Length];
+            var jsons = new KeypointJson[labelConfig.labelEntries.Count];
+            var idx = 0;
 
-            for (var i = 0; i < input.keypoints.Length; i++)
+            foreach (var cfg in labelConfig.labelEntries)
             {
-                json.key_points[i] = new JointJson
+                var json = new KeypointJson();
+                json.label_id = cfg.id;
+                json.label_name = cfg.label;
+                json.template_id = input.templateID;
+                json.template_name = input.templateName;
+                json.key_points = new JointJson[input.keypoints.Length];
+                json.skeleton = new SkeletonJson[input.skeleton.Length];
+
+                for (var i = 0; i < input.keypoints.Length; i++)
                 {
-                    label = input.keypoints[i].label,
-                    index = i,
-                    color = input.keypoints[i].color
-                };
+                    json.key_points[i] = new JointJson
+                    {
+                        label = input.keypoints[i].label,
+                        index = i,
+                        color = input.keypoints[i].color
+                    };
+                }
+
+                for (var i = 0; i < input.skeleton.Length; i++)
+                {
+                    json.skeleton[i] = new SkeletonJson()
+                    {
+                        joint1 = input.skeleton[i].joint1,
+                        joint2 = input.skeleton[i].joint2,
+                        color = input.skeleton[i].color
+                    };
+                }
+
+                jsons[idx++] = json;
             }
 
-            for (var i = 0; i < input.skeleton.Length; i++)
-            {
-                json.skeleton[i] = new SkeletonJson()
-                {
-                    joint1 = input.skeleton[i].joint1,
-                    joint2 = input.skeleton[i].joint2,
-                    color = input.skeleton[i].color
-                };
-            }
-
-            return json;
+            return jsons;
         }
     }
 }

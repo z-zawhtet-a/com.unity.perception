@@ -13,6 +13,7 @@ using UnityEngine.Rendering.HighDefinition;
 #endif
 #if URP_PRESENT
 using UnityEngine.Rendering.Universal;
+#pragma warning disable 649
 #endif
 
 namespace UnityEngine.Perception.GroundTruth
@@ -424,26 +425,37 @@ namespace UnityEngine.Perception.GroundTruth
 
         void CaptureRgbData(Camera cam)
         {
+            // TODO - Steve - this could be a place where we override the capture of the RGB image to allow the
+            // active reporter to determine where we should save RGB images, or even write them out
+
             if (!captureRgbImages)
                 return;
 
             Profiler.BeginSample("CaptureDataFromLastFrame");
 
+            var width = cam.pixelWidth;
+            var height = cam.pixelHeight;
+
+            var frameCount = Time.frameCount;
+            var captureFilename = $"{Manager.Instance.GetDirectoryFor(rgbDirectory)}/{k_RgbFilePrefix}{frameCount}.png";
+
             // Record the camera's projection matrix
             SetPersistentSensorData("camera_intrinsic", ToProjectionMatrix3x3(cam.projectionMatrix));
+            SetPersistentSensorData("camera_width", width);
+            SetPersistentSensorData("camera_height", height);
+            SetPersistentSensorData("full_path", captureFilename);
+            SetPersistentSensorData("frame", frameCount);
 
             // Record the camera's projection type (orthographic or perspective)
             SetPersistentSensorData("projection", cam.orthographic ? "orthographic" : "perspective");
 
-            var captureFilename = $"{Manager.Instance.GetDirectoryFor(rgbDirectory)}/{k_RgbFilePrefix}{Time.frameCount}.png";
             var dxRootPath = $"{rgbDirectory}/{k_RgbFilePrefix}{Time.frameCount}.png";
+
             SensorHandle.ReportCapture(dxRootPath, SensorSpatialData.FromGameObjects(
                 m_EgoMarker == null ? null : m_EgoMarker.gameObject, gameObject),
                 m_PersistentSensorData.Select(kvp => (kvp.Key, kvp.Value)).ToArray());
 
             Func<AsyncRequest<CaptureCamera.CaptureState>, AsyncRequest.Result> colorFunctor;
-            var width = cam.pixelWidth;
-            var height = cam.pixelHeight;
 
             colorFunctor = r =>
             {

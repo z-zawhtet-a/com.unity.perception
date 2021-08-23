@@ -25,9 +25,10 @@ namespace UnityEngine.Perception.GroundTruth
 
         [SuppressMessage("ReSharper", "InconsistentNaming")]
         [SuppressMessage("ReSharper", "NotAccessedField.Local")]
-        internal struct BoundingBoxValue
+        public struct BoundingBoxValue
         {
             public int label_id;
+            public int frame;
             public string label_name;
             public uint instance_id;
             public float x;
@@ -42,6 +43,12 @@ namespace UnityEngine.Perception.GroundTruth
         /// The GUID id to associate with the annotations produced by this labeler.
         /// </summary>
         public string annotationId = "f9f22e05-443f-4602-a422-ebe4ea9b55cb";
+
+        /// <summary>
+        /// The annotation ID that the COCO exporter will use to know whether an ID is coming from a bounding box 2 labeler.
+        /// </summary>
+        public static string annotationIdForCocoExport = "f9f22e05-443f-4602-a422-ebe4ea9b55cb";
+
         /// <summary>
         /// The <see cref="IdLabelConfig"/> which associates objects with labels.
         /// </summary>
@@ -156,6 +163,7 @@ namespace UnityEngine.Perception.GroundTruth
                     m_BoundingBoxValues.Add(new BoundingBoxValue
                     {
                         label_id = labelEntry.id,
+                        frame = frameCount,
                         label_name = labelEntry.label,
                         instance_id = objectInfo.instanceId,
                         x = objectInfo.boundingBox.x,

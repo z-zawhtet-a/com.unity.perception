@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
+using UnityEngine.Perception.GroundTruth.Exporters;
+using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
 
 #if UNITY_EDITOR_WIN || UNITY_EDITOR_OSX
 using UnityEditor.Perception.Visualizer;
@@ -15,10 +18,14 @@ namespace UnityEditor.Perception.GroundTruth
     {
         Dictionary<SerializedProperty, CameraLabelerDrawer> m_CameraLabelerDrawers = new Dictionary<SerializedProperty, CameraLabelerDrawer>();
         ReorderableList m_LabelersList;
+        string[] m_ExporterList;
 
         SerializedProperty labelersProperty => this.serializedObject.FindProperty("m_Labelers");
 
         PerceptionCamera perceptionCamera => ((PerceptionCamera)this.target);
+
+        string m_OutputMode = "Perception";
+        int m_OutputModeIndex = -1;
 
         public void OnEnable()
         {
@@ -31,6 +38,13 @@ namespace UnityEditor.Perception.GroundTruth
             m_LabelersList.drawElementCallback = DrawElement;
             m_LabelersList.onAddCallback += OnAdd;
             m_LabelersList.onRemoveCallback += OnRemove;
+
+            m_OutputMode = PlayerPrefs.GetString(SimulationState.outputFormatMode);
+            m_ExporterList = TypeCache.GetTypesDerivedFrom<IDatasetExporter>().Select(exporter => exporter.Name).ToArray();
+            if (m_ExporterList.Any())
+                m_OutputModeIndex = Array.IndexOf(m_ExporterList, m_OutputMode);
+
+            m_OutputMode = PlayerPrefs.GetString(SimulationState.outputFormatMode, "Perception");
         }
 
         float GetElementHeight(int index)
@@ -82,6 +96,7 @@ namespace UnityEditor.Perception.GroundTruth
 
         const string k_FrametimeTitle = "Simulation Delta Time";
         const float k_DeltaTimeTooLarge = 200;
+
         public override void OnInspectorGUI()
         {
             using(new EditorGUI.DisabledScope(EditorApplication.isPlaying))
@@ -89,6 +104,25 @@ namespace UnityEditor.Perception.GroundTruth
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(perceptionCamera.description)), new GUIContent("Description", "Provide a description for this camera (optional)."));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(perceptionCamera.showVisualizations)), new GUIContent("Show Labeler Visualizations", "Display realtime visualizations for labelers that are currently active on this camera."));
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(perceptionCamera.captureRgbImages)),new GUIContent("Save Camera RGB Output to Disk", "For each captured frame, save an RGB image of the camera's output to disk."));
+
+                if (m_ExporterList.Any())
+                {
+                    if (m_OutputModeIndex < 0)
+                    {
+                        m_OutputMode = nameof(PerceptionExporter);
+                        Debug.LogWarning($"Could not find the output format \'{m_OutputMode}\' in the list of available exporters, setting the exporter to \'{m_OutputMode}\'");
+                        m_OutputModeIndex = Array.IndexOf(m_ExporterList, m_OutputMode);
+                    }
+                    var selected = EditorGUILayout.Popup(new GUIContent("Output Format", ""), m_OutputModeIndex, m_ExporterList);
+
+                    if (m_OutputModeIndex != selected)
+                    {
+                        m_OutputModeIndex = selected;
+                        m_OutputMode = m_ExporterList[selected];
+                        PlayerPrefs.SetString(SimulationState.outputFormatMode, m_OutputMode);
+                    }
+                }
+
                 EditorGUILayout.PropertyField(serializedObject.FindProperty(nameof(perceptionCamera.captureTriggerMode)),new GUIContent("Capture Trigger Mode", $"The method of triggering captures for this camera. In {nameof(CaptureTriggerMode.Scheduled)} mode, captures happen automatically based on a start frame and frame delta time. In {nameof(CaptureTriggerMode.Manual)} mode, captures should be triggered manually through calling the {nameof(perceptionCamera.RequestCapture)} method of {nameof(PerceptionCamera)}."));
 
                 GUILayout.Space(5);

@@ -43,6 +43,8 @@ namespace UnityEngine.Perception.GroundTruth
             return ego;
         }
 
+
+
         /// <summary>
         /// Register a new sensor under the given ego.
         /// </summary>
@@ -187,7 +189,6 @@ namespace UnityEngine.Perception.GroundTruth
         }
     }
 
-
     /// <summary>
     /// Capture trigger modes for sensors.
     /// </summary>
@@ -284,6 +285,11 @@ namespace UnityEngine.Perception.GroundTruth
                 throw new ArgumentException("The given annotationDefinition is invalid", nameof(annotationDefinition));
 
             return DatasetCapture.SimulationState.ReportAnnotationAsync(annotationDefinition, this);
+        }
+
+        public string GetRgbCaptureFilename(string defaultFilename, params(string, object)[] additionalSensorValues)
+        {
+            return DatasetCapture.SimulationState.GetRgbCaptureFilename(defaultFilename, additionalSensorValues);
         }
 
         /// <summary>

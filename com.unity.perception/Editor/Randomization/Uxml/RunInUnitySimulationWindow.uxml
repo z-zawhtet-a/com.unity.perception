@@ -20,6 +20,11 @@
                 <editor:ToolbarMenu name="sys-param" class="unity-base-field__input" style="border-width: 1px;"/>
             </VisualElement>
 
+            <VisualElement class="unity-base-field" tooltip="TODO">
+                <Label text="Output Format" class="unity-base-field__label"/>
+                <editor:ToolbarMenu name="output-format" class="unity-base-field__input" style="border-width: 1px;"/>
+            </VisualElement>
+
             <Label text="Optional Configuration" class="sim-window__header-1" style="margin-top: 18px;"/>
             <editor:ObjectField name="scenario-config" label="Scenario JSON Config" allow-scene-object="false"
                 tooltip="Selects a scenario JSON configuration to load during the run.
