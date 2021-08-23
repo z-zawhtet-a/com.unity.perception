@@ -42,7 +42,13 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// The GUID id to associate with the annotations produced by this labeler.
         /// </summary>
-        public static string annotationId = "f9f22e05-443f-4602-a422-ebe4ea9b55cb";
+        public string annotationId = "f9f22e05-443f-4602-a422-ebe4ea9b55cb";
+
+        /// <summary>
+        /// The annotation ID that the COCO exporter will use to know whether an ID is coming from a bounding box 2 labeler.
+        /// </summary>
+        public static string annotationIdForCocoExport = "f9f22e05-443f-4602-a422-ebe4ea9b55cb";
+
         /// <summary>
         /// The <see cref="IdLabelConfig"/> which associates objects with labels.
         /// </summary>

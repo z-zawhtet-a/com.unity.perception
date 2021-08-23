@@ -330,7 +330,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         public void OnAnnotationRegistered<TSpec>(Guid annotationId, TSpec[] values)
         {
-            if (annotationId.ToString() == BoundingBox2DLabeler.annotationId)
+            if (annotationId.ToString() == BoundingBox2DLabeler.annotationIdForCocoExport)
             {
                 m_ReportingObjectDetection = true;
                 m_ObjectDetectionCategories = new CocoTypes.ObjectDetectionCategories
@@ -354,7 +354,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
                 }
             }
 
-            if (annotationId.ToString() == KeypointLabeler.annotationId)
+            if (annotationId.ToString() == KeypointLabeler.annotationIdForCocoExport)
             {
                 m_ReportingKeypoints = true;
                 var categories = new CocoTypes.KeypointCategory[values.Length];
