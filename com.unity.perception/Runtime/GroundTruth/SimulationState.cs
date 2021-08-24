@@ -12,6 +12,7 @@ using UnityEngine.Perception.GroundTruth.Exporters;
 using UnityEngine.Perception.GroundTruth.Exporters.Coco;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew;
+using UnityEngine.Perception.GroundTruth.Exporters.Solo;
 using UnityEngine.Profiling;
 
 namespace UnityEngine.Perception.GroundTruth
@@ -144,6 +145,9 @@ namespace UnityEngine.Perception.GroundTruth
                 case nameof(PerceptionNewExporter):
                     _ActiveReporter = new PerceptionNewExporter();
                     break;
+                case nameof(SoloExporter):
+                    _ActiveReporter = new SoloExporter();
+                    break;
                 default:
                     _ActiveReporter = new PerceptionExporter();
                     break;
@@ -193,7 +197,7 @@ namespace UnityEngine.Perception.GroundTruth
             }
         }
 
-        struct PendingMetric
+        public struct PendingMetric
         {
             public PendingMetric(MetricDefinition metricDefinition, int metricId, SensorHandle sensorHandle, Guid captureId, Annotation annotation, Guid sequenceId, int step, JToken values = null)
             {
@@ -360,7 +364,14 @@ namespace UnityEngine.Perception.GroundTruth
                 }
             }
 
-            GetActiveReporter()?.OnCaptureReported(frameCount, width, height, filename);
+            var trans = pendingCapture.SensorSpatialData.EgoPose.position;
+            var rot = pendingCapture.SensorSpatialData.EgoPose.rotation;
+            var velocity = pendingCapture.SensorSpatialData.EgoVelocity ?? Vector3.zero;
+            var accel = pendingCapture.SensorSpatialData.EgoAcceleration ?? Vector3.zero;
+
+
+
+            GetActiveReporter()?.OnCaptureReported(m_SequenceId, AcquireStep(), width, height, filename, trans, rot, velocity, accel);
         }
 
         static string GetFormatFromFilename(string filename)
@@ -720,6 +731,8 @@ namespace UnityEngine.Perception.GroundTruth
                 id = Guid.NewGuid();
 
             RegisterAdditionalInfoType(name, specValues, description, null, id, AdditionalInfoKind.Metric);
+
+            GetActiveReporter()?.OnMetricRegistered(id, name, description); // <- Not sure about this one either
 
             return new MetricDefinition(id);
         }

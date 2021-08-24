@@ -60,7 +60,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         [SuppressMessage("ReSharper", "InconsistentNaming")]
         [SuppressMessage("ReSharper", "NotAccessedField.Local")]
-        struct InstanceColorValue
+        public struct InstanceColorValue
         {
             public uint instance_id;
             public Color32 color;

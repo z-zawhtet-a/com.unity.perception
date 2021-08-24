@@ -234,8 +234,10 @@ namespace UnityEngine.Perception.GroundTruth
                 return;
             }
 
-            void Write(List<PendingMetric> pendingMetrics, int metricsFileIndex)
+            void Write(List<PendingMetric> pendingMetrics, SimulationState simState, int metricsFileIndex)
             {
+                GetActiveReporter()?.ProcessPendingMetrics(pendingMetrics, simState);
+#if false
                 m_SerializeMetricsAsyncSampler.Begin();
                 var jArray = new JArray();
                 foreach (var pendingMetric in pendingMetrics)
@@ -247,11 +249,12 @@ namespace UnityEngine.Perception.GroundTruth
 
                 WriteJObjectToFile(metricsJObject, $"metrics_{metricsFileIndex:000}.json");
                 m_SerializeMetricsAsyncSampler.End();
+#endif
             }
 
             if (flush)
             {
-                Write(pendingMetricsToWrite, m_MetricsFileIndex);
+                Write(pendingMetricsToWrite, this, m_MetricsFileIndex);
             }
             else
             {
@@ -263,7 +266,7 @@ namespace UnityEngine.Perception.GroundTruth
                 };
                 req.Enqueue(r =>
                 {
-                    Write(r.data.PendingMetrics, r.data.MetricFileIndex);
+                    Write(r.data.PendingMetrics, this, r.data.MetricFileIndex);
                     return AsyncRequest.Result.Completed;
                 });
                 req.Execute();

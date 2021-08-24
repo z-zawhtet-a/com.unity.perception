@@ -67,6 +67,11 @@ namespace UnityEngine.Perception.GroundTruth
             public RenderTexture sourceTexture;
         }
 
+        public struct SegmentationValue
+        {
+            public int frame;
+        }
+
         /// <summary>
         /// Event which is called each frame a semantic segmentation image is read back from the GPU.
         /// </summary>
@@ -227,10 +232,18 @@ namespace UnityEngine.Perception.GroundTruth
             if (!m_AsyncAnnotations.TryGetValue(frameCount, out var annotation))
                 return;
 
+            var info = new SegmentationValue[]
+            {
+                new SegmentationValue
+                {
+                    frame = frameCount
+                }
+            };
+
             var datasetRelativePath = $"{semanticSegmentationDirectory}/{k_SegmentationFilePrefix}{frameCount}.png";
             var localPath = $"{Manager.Instance.GetDirectoryFor(semanticSegmentationDirectory)}/{k_SegmentationFilePrefix}{frameCount}.png";
 
-            annotation.ReportFile(datasetRelativePath);
+            annotation.ReportFileAndValues(datasetRelativePath, info);
 
             var asyncRequest = Manager.Instance.CreateRequest<AsyncRequest<AsyncSemanticSegmentationWrite>>();
 

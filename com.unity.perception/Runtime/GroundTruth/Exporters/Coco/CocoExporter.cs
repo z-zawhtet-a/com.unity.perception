@@ -42,6 +42,11 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
 
         Guid m_SessionGuid;
 
+        public void OnMetricRegistered(Guid metricId, string name, string description)
+        {
+            Debug.Log("On MetricRegistered");
+        }
+
         public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues)
         {
             return string.Empty;
@@ -516,6 +521,11 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             }
         }
 
+        public Task ProcessPendingMetrics(List<SimulationState.PendingMetric> pendingMetrics, SimulationState simState)
+        {
+            return null;
+        }
+
         static Dictionary<int, CocoTypes.ObjectDetectionAnnotation> ProcessBoundingBoxAnnotations(IEnumerable<object> annotations)
         {
             var map = new Dictionary<int, CocoTypes.ObjectDetectionAnnotation>();
@@ -552,12 +562,13 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.Coco
             return map;
         }
 
-        public async Task OnCaptureReported(int frame, int width, int height, string filename)
+        public async Task OnCaptureReported(Guid sequence, int step, int width, int height, string filename, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 acceleration)
         {
             InitializeCaptureFiles();
 
             var json = string.Empty;
 
+            var frame = 0;
             var converted = AnnotationHandler.HandleCameraCapture(frame, width, height, filename);
             if (m_FirstCapture)
             {

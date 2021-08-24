@@ -17,6 +17,11 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
         string outputDirectory = string.Empty;
         int captureFileIndex = 0;
 
+        public void OnMetricRegistered(Guid metricId, string name, string description)
+        {
+            Debug.Log("On MetricRegistered");
+        }
+
         public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues)
         {
             return string.Empty;
@@ -77,7 +82,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
             return null;
         }
 
-        public Task OnCaptureReported(int frame, int width, int height, string filename)
+        public Task OnCaptureReported(Guid sequence, int step, int width, int height, string filename, Vector3 position, Quaternion rotation, Vector3 velocity, Vector3 acceleration)
         {
             // do nothing :-)
             return null;
@@ -146,5 +151,12 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat
 
             return ext.ToUpperInvariant();
         }
+
+        public Task ProcessPendingMetrics(List<SimulationState.PendingMetric> pendingMetrics, SimulationState simState)
+        {
+            return null;
+        }
+
+
     }
 }

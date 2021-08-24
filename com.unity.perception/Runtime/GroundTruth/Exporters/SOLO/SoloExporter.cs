@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using Unity.Simulation;
 using UnityEngine.Perception.GroundTruth.Exporters.PerceptionFormat;
 
-namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
+namespace UnityEngine.Perception.GroundTruth.Exporters.Solo
 {
-    public class PerceptionNewExporter : IDatasetExporter
+    public class SoloExporter : IDatasetExporter
     {
         public bool prettyPrint = true;
 
@@ -17,12 +17,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
 
         int m_UnknownFrameCount = 0;
 
-        public void OnMetricRegistered(Guid metricId, string name, string description)
-        {
-            Debug.Log("On MetricRegistered");
-        }
-
-        public string GetRgbCaptureFilename(params(string, object)[] additionalSensorValues)
+        public string GetRgbCaptureFilename(params (string, object)[] additionalSensorValues)
         {
             var frameArray = additionalSensorValues.Where(p => p.Item1 == "frame").Select(p => p.Item2);
             var frame = frameArray.Any() ? (int)frameArray.First() : m_UnknownFrameCount++;
@@ -41,13 +36,13 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
                 total_frames = 0,
                 total_sequences = 0,
                 sequences = null,
-                sensors = new []
+                sensors = new[]
                 {
                     new CameraData
                     {
                         id = "camera",
                         modality = "camera",
-                        resolution = new []{0,0}
+                        resolution = new[] { 0, 0 }
                     }
                 }
             };
@@ -216,18 +211,29 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
             // Right now, do nothing :-)
         }
 
-        bool GetFilenameForAnnotation(int sequence, int step, object rawData, out string filename, out string id, out string def, out bool reportValues)
+        Dictionary<Guid, (string, string)> m_MetricIdMap = new Dictionary<Guid, (string, string)>();
+
+        public void OnMetricRegistered(Guid metricId, string name, string description)
+        {
+            Debug.Log("On MetricRegistered");
+            m_MetricIdMap[metricId] = (name, description);
+        }
+
+        bool GetFilenameForMetric(int sequence, int step, object value, out string filename, out string id, out string def, out bool reportValues)
         {
             filename = string.Empty;
             id = string.Empty;
             def = string.Empty;
             reportValues = true;
-            if (rawData is BoundingBox2DLabeler.BoundingBoxValue bbox)
+#if false
+            if (value is BoundingBox2DLabeler.BoundingBoxValue bbox)
             {
+
                 m_FrameToSequenceMap[bbox.frame] = (sequence, step);
                 var frame = bbox.frame;
                 id = "bounding_box";
                 def = $"{id}_definition";
+
 //                var fmt = new String('0', 5);
 //                var format = "{0,20:" + fmt + "}";
 //                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
@@ -239,6 +245,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
             {
                 id = "instance_segmentation";
                 def = $"{id}_definition";
+
 //                var fmt = new String('0', 5);
 //                var format = "{0,20:" + fmt + "}";
 //                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
@@ -250,6 +257,56 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
             {
                 id = "semantic_segmentation";
                 def = $"{id}_definition";
+
+//                var fmt = new String('0', 5);
+//                var format = "{0,20:" + fmt + "}";
+//                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
+                filename = $"step.{step}.annotation.{id}.camera.json";
+                reportValues = false;
+                return true;
+            }
+#endif
+            return false;
+        }
+
+        bool GetFilenameForAnnotation(int sequence, int step, object rawData, out string filename, out string id, out string def, out bool reportValues)
+        {
+            filename = string.Empty;
+            id = string.Empty;
+            def = string.Empty;
+            reportValues = true;
+
+            if (rawData is BoundingBox2DLabeler.BoundingBoxValue bbox)
+            {
+                m_FrameToSequenceMap[bbox.frame] = (sequence, step);
+                var frame = bbox.frame;
+                id = "bounding_box";
+                def = $"{id}_definition";
+
+//                var fmt = new String('0', 5);
+//                var format = "{0,20:" + fmt + "}";
+//                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
+                filename = $"step.{step}.annotation.{id}.camera.json";
+                return true;
+            }
+
+            if (rawData is InstanceSegmentationLabeler.InstanceColorValue)
+            {
+                id = "instance_segmentation";
+                def = $"{id}_definition";
+
+//                var fmt = new String('0', 5);
+//                var format = "{0,20:" + fmt + "}";
+//                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
+                filename = $"step.{step}.annotation.{id}.camera.json";
+                return true;
+            }
+
+            if (rawData is SemanticSegmentationLabeler.SegmentationValue)
+            {
+                id = "semantic_segmentation";
+                def = $"{id}_definition";
+
 //                var fmt = new String('0', 5);
 //                var format = "{0,20:" + fmt + "}";
 //                filename = $"step.{frame.ToString(format)}.annotation.bounding_box.camera.json";
@@ -270,6 +327,71 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
         Dictionary<Guid, int> m_SequenceGuidMap = new Dictionary<Guid, int>();
 
         Dictionary<int, (int, int)> m_FrameToSequenceMap = new Dictionary<int, (int, int)>();
+
+        public Task ProcessPendingMetrics(List<SimulationState.PendingMetric> pendingMetrics, SimulationState simState)
+        {
+            foreach (var metric in pendingMetrics)
+            {
+                if (!m_SequenceGuidMap.TryGetValue(metric.SequenceId, out var seq))
+                {
+                    seq = m_CurrentSequence++;
+                    m_SequenceGuidMap[metric.SequenceId] = seq;
+
+                    var seqDir = Path.Combine(m_DirectoryName, $"sequence.{m_SequenceGuidMap[metric.SequenceId]}");
+
+                    // Create a directory
+                    if (!Directory.Exists(seqDir))
+                        Directory.CreateDirectory(seqDir);
+                }
+
+                var path = Path.Combine(m_DirectoryName, $"sequence.{m_SequenceGuidMap[metric.SequenceId]}");
+
+                if (!m_MetricIdMap.ContainsKey(metric.MetricDefinition.Id))
+                    continue;
+
+                var label = m_MetricIdMap[metric.MetricDefinition.Id].Item1.Replace(" ", "_");
+
+                var filename = $"step.{metric.Step}.metric.{label}.camera.json";
+
+                var sensor = "camera";
+
+                var json = new StringBuilder();
+                json.Append($"{{\"capture_id\": \"{sensor}\",");
+                json.Append($"\"annotation_id\": \"\",");
+                json.Append($"\"metric_definition\": \"{label}\",");
+                json.Append("\"values\":");
+                json.Append(metric.Values);
+                json.Append("}");
+
+                m_PendingTasks.Add(AnnotationHandler.WriteOutJson(path, filename, json.ToString()));
+#if false
+
+
+                    if (GetFilenameForAnnotation(seq, metric.Step, value, out var filename, out var id, out var def, out var reportValues))
+                    {
+                        var sensor = "camera";
+
+                        var json = new StringBuilder();
+                        json.Append($"{{\"Id\": \"{id}\",");
+                        json.Append($"\"definition\": \"{def}\",");
+                        json.Append($"\"sequence\": {seq},");
+                        json.Append($"\"step\": {metric.Step},");
+                        json.Append($"\"sensor\": \"{sensor}\"");
+
+                        if (reportValues)
+                        {
+                            json.Append(",\"values\":");
+                            json.Append(annotationData.ValuesJson);
+                        }
+
+                        json.Append("}");
+
+                        m_PendingTasks.Add(AnnotationHandler.WriteOutJson(path, filename, json.ToString()));
+                    }
+#endif
+            }
+            return Task.CompletedTask;
+        }
 
         public Task ProcessPendingCaptures(List<SimulationState.PendingCapture> pendingCaptures, SimulationState simState)
         {
@@ -393,11 +515,6 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
 
             m_Metadata.total_frames++;
             m_Metadata.sensors[0].resolution = new[] { width, height };
-            return null;
-        }
-
-        public Task ProcessPendingMetrics(List<SimulationState.PendingMetric> pendingMetrics, SimulationState simState)
-        {
             return null;
         }
     }
