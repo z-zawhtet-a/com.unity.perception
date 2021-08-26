@@ -844,11 +844,16 @@ namespace UnityEngine.Perception.GroundTruth
                 }
             }
 
-            var values2 = new List<object>();
-            foreach (var v in values)
+            List<object> values2 = null;
+            if (values != null)
             {
-                values2.Add(v);
+                values2 = new List<object>();
+                foreach (var v in values)
+                {
+                    values2.Add(v);
+                }
             }
+
             ReportAsyncAnnotationResult(asyncAnnotation, filename, jArray, values:values2);
         }
 
