@@ -6,7 +6,9 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Unity.Mathematics;
 using Unity.Simulation;
+using UnityEngine.Perception.GroundTruth.SoloDesign;
 
 // ReSharper disable NotAccessedField.Local
 // ReSharper disable CoVariantArrayConversion
@@ -105,7 +107,7 @@ namespace UnityEngine.Perception.GroundTruth
                     WriteJObjectToFile(metricDefinitionsJObject, "metric_definitions.json");
                 }
             }
-            Debug.Log($"Dataset written to {Path.GetDirectoryName(OutputDirectory)}");
+//            Debug.Log($"Dataset written to {Path.GetDirectoryName(OutputDirectory)}");
         }
 
         void WriteJObjectToFile(JObject jObject, string filename)
@@ -124,16 +126,49 @@ namespace UnityEngine.Perception.GroundTruth
             m_WriteToDiskSampler.Begin();
 
             var path = Path.Combine(OutputDirectory, filename);
-            Debug.Log($"ss - sensors.json - {path}");
+//            Debug.Log($"ss - sensors.json - {path}");
             File.WriteAllText(path, contents);
             Manager.Instance.ConsumerFileProduced(path);
             m_WriteToDiskSampler.End();
         }
 
+        int m_currentReportedSequence = 0;
+        Dictionary<Guid, int> m_SequenceMap = new Dictionary<Guid, int>();
+
+        Sensor ToSensor(PendingCapture pendingCapture, SimulationState simulationState, int captureFileIndex)
+        {
+            var sensor = new RgbSensor
+            {
+                Id = "camera",
+                sensorType = "camera",
+                position = Vector3.zero,
+                rotation = Vector3.zero,
+                velocity = Vector3.zero,
+                acceleration = Vector3.zero,
+                metadata = new Dictionary<string, object>(),
+                imageFormat = "png",
+                dimension = Vector2.zero,
+                buffer = null
+            };
+
+            return sensor;
+        }
+
+        Frame ToFrame(PendingCapture pendingCapture, SimulationState simulationState, int captureFileIndex)
+        {
+            if (!m_SequenceMap.TryGetValue(pendingCapture.SequenceId, out var seqId))
+            {
+                seqId = m_currentReportedSequence++;
+                m_SequenceMap[pendingCapture.SequenceId] = seqId;
+            }
+
+            return new Frame(pendingCapture.FrameCount, seqId, pendingCapture.Step);
+        }
+
         void WritePendingCaptures(bool flush = false, bool writeCapturesFromThisFrame = false)
         {
-            if (!flush && m_PendingCaptures.Count < k_MinPendingCapturesBeforeWrite)
-                return;
+//            if (!flush && m_PendingCaptures.Count < k_MinPendingCapturesBeforeWrite)
+//                return;
 
             m_SerializeCapturesSampler.Begin();
 
@@ -157,9 +192,171 @@ namespace UnityEngine.Perception.GroundTruth
                 return;
             }
 
+            BoundingBoxAnnotation ToBoundingBox(Annotation annotation, AnnotationData data)
+            {
+                var bbox = new BoundingBoxAnnotation
+                {
+                    Id = "bounding box",
+                    sensorId = "camera",
+                    description = "Labeled bounding boxes",
+                    annotationType = "bounding box labeler",
+                    metadata = new Dictionary<string, object>(),
+                    boxes = new List<BoundingBoxAnnotation.Entry>()
+                };
+
+                foreach (var d in data.RawValues)
+                {
+                    if (d is BoundingBox2DLabeler.BoundingBoxValue e)
+                    {
+                        var entry = new BoundingBoxAnnotation.Entry
+                        {
+                            instanceId = (int)e.instance_id,
+                            label = e.label_name,
+                            origin = new Vector2{x = e.x, y = e.y},
+                            dimension = new Vector2{x = e.width, y = e.height}
+                        };
+
+                        bbox.boxes.Add(entry);
+                    }
+                }
+
+                return bbox;
+            }
+
+            InstanceSegmentation ToInstanceSegmentation(Annotation annotation, AnnotationData data, params(string,object)[] sensorValues)
+            {
+                var seg = new InstanceSegmentation
+                {
+                    Id = "instance segmentation",
+                    sensorId = "camera",
+                    description = "instance segmentation blah blah blah",
+                    annotationType = "instance segmentation labeler",
+                    metadata = new Dictionary<string, object>(),
+                    instances = new List<InstanceSegmentation.Entry>(),
+                    dimension = Vector2.zero,
+                    imageFormat = "png"
+                };
+
+                foreach (var sv in sensorValues)
+                {
+                    switch (sv.Item1)
+                    {
+                        case "camera_width":
+                            seg.dimension.x = (int)sv.Item2;
+                            break;
+                        case "camera_height":
+                            seg.dimension.y = (int)sv.Item2;
+                            break;
+                    }
+                }
+
+
+                foreach (var d in data.RawValues)
+                {
+                    if (d is InstanceSegmentationLabeler.InstanceData i)
+                    {
+                        seg.buffer = i.buffer;
+
+                        foreach (var color in i.colors)
+                        {
+                            var entry = new InstanceSegmentation.Entry
+                            {
+                                instanceId = (int)color.instance_id,
+                                rgba = color.color
+                            };
+
+                            seg.instances.Add(entry);
+                        }
+
+                    }
+                }
+
+                return seg;
+            }
+
+            List<Sensor> ConvertToSensors(PendingCapture capture, SimulationState simulationState)
+            {
+                var dim = new Vector2();
+                var buffer = new byte[0];
+
+                foreach (var sv in capture.AdditionalSensorValues)
+                {
+                    switch (sv.Item1)
+                    {
+                        case "camera_width":
+                            dim.x = (int)sv.Item2;
+                            break;
+                        case "camera_height":
+                            dim.y = (int)sv.Item2;
+                            break;
+                        case "buffer":
+                            buffer = (byte[])sv.Item2;
+                            break;
+                    }
+                }
+
+                return new List<Sensor>
+                {
+                    new RgbSensor
+                    {
+                        Id = "camera",
+                        sensorType = capture.SensorData.modality,
+                        imageFormat = ".png",
+                        dimension = dim,
+                        position = capture.SensorSpatialData.EgoPose.position,
+                        rotation = capture.SensorSpatialData.EgoPose.rotation.eulerAngles,
+                        velocity = capture.SensorSpatialData.EgoVelocity ?? Vector3.zero,
+                        acceleration = capture.SensorSpatialData.EgoAcceleration ?? Vector3.zero,
+                        buffer = buffer,
+                        metadata = new Dictionary<string, object>()
+                    }
+                };
+            }
+
+            Frame ConvertToFrameData(PendingCapture capture, SimulationState simState, int captureFileIndex)
+            {
+                if (!m_SequenceMap.TryGetValue(capture.SequenceId, out var seq))
+                {
+                    seq = m_currentReportedSequence++;
+                    m_SequenceMap[capture.SequenceId] = seq;
+                }
+
+                var frame = new Frame(capture.FrameCount, seq, capture.Step);
+
+                frame.sensors = ConvertToSensors(capture, simState);
+
+                foreach (var (annotation, data) in capture.Annotations)
+                {
+                    SoloDesign.Annotation soloAnnotation = null;
+                    var supported = false;
+
+                    switch (data.AnnotationDefinition.Id.ToString())
+                    {
+                        case "f9f22e05-443f-4602-a422-ebe4ea9b55cb":
+                            soloAnnotation = ToBoundingBox(annotation, data);
+                            supported = true;
+                            break;
+                        case "1ccebeb4-5886-41ff-8fe0-f911fa8cbcdf":
+                            soloAnnotation = ToInstanceSegmentation(annotation, data, capture.AdditionalSensorValues);
+                            supported = true;
+                            break;
+                    }
+
+                    if (supported) frame.annotations.Add(soloAnnotation);
+                }
+
+                return frame;
+            }
+
             void Write(List<PendingCapture> pendingCaptures, SimulationState simulationState, int captureFileIndex)
             {
-                GetActiveReporter()?.ProcessPendingCaptures(pendingCaptures, simulationState);
+                foreach (var pendingCapture in pendingCaptures)
+                {
+                    var frame = ConvertToFrameData(pendingCapture, simulationState, captureFileIndex);
+                    GetActiveConsumer()?.OnFrameGenerated(frame);
+                }
+
+                //GetActiveReporter()?.ProcessPendingCaptures(pendingCaptures, simulationState);
 #if false
                 simulationState.m_SerializeCapturesAsyncSampler.Begin();
 
@@ -236,7 +433,9 @@ namespace UnityEngine.Perception.GroundTruth
 
             void Write(List<PendingMetric> pendingMetrics, SimulationState simState, int metricsFileIndex)
             {
+#if false
                 GetActiveReporter()?.ProcessPendingMetrics(pendingMetrics, simState);
+#endif
 #if false
                 m_SerializeMetricsAsyncSampler.Begin();
                 var jArray = new JArray();

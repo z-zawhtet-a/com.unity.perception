@@ -234,7 +234,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
                 filename = $"step.{step}.annotation.{id}.camera.json";
                 return true;
             }
-
+#if false
             if (rawData is InstanceSegmentationLabeler.InstanceColorValue)
             {
                 id = "instance_segmentation";
@@ -245,7 +245,7 @@ namespace UnityEngine.Perception.GroundTruth.Exporters.PerceptionNew
                 filename = $"step.{step}.annotation.{id}.camera.json";
                 return true;
             }
-
+#endif
             if (rawData is SemanticSegmentationLabeler.SegmentationValue)
             {
                 id = "semantic_segmentation";

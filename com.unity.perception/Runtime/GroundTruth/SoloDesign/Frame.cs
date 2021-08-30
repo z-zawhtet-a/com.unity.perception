@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Unity.Mathematics;
 
 namespace UnityEngine.Perception.GroundTruth.SoloDesign
 {
@@ -31,8 +33,23 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// <summary>
     /// Metadata describing the simulation.
     /// </summary>
+    [Serializable]
     public class SimulationMetadata
     {
+        public SimulationMetadata()
+        {
+            unityVersion = "figure out how to do unity version";
+            perceptionVersion = "0.8.0-preview.4";
+#if HDRP_PRESENT
+            renderPipeline = "HDRP";
+#elif URP_PRESENT
+            renderPipeline = "URP";
+#else
+            renderPipeline = "built-in";
+#endif
+            metadata = new Dictionary<string, object>();
+        }
+
         /// <summary>
         /// The version of the Unity editor executing the simulation.
         /// </summary>
@@ -57,8 +74,12 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// <summary>
     /// Metadata describing the final metrics of the simulation.
     /// </summary>
+    [Serializable]
     public class CompletionMetadata : SimulationMetadata
     {
+        public CompletionMetadata() : base()
+        {}
+
         public struct Sequence
         {
             /// <summary>
@@ -88,8 +109,19 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// frame. This is only reported after all of the captures, annotations, and
     /// metrics are ready to report for a single frame.
     /// </summary>
+    [Serializable]
     public class Frame
     {
+        public Frame(int frame, int sequence, int step)
+        {
+            this.frame = frame;
+            this.sequence = sequence;
+            this.step = step;
+            sensors = new List<Sensor>();
+            annotations = new List<Annotation>();
+            metrics = new List<Metric>();
+        }
+
         /// <summary>
         /// The perception frame number of this record
         /// </summary>
@@ -119,6 +151,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// <summary>
     /// Abstract sensor class that holds all of the common information for a sensor.
     /// </summary>
+    [Serializable]
     public abstract class Sensor
     {
         /// <summary>
@@ -155,6 +188,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// <summary>
     /// The concrete class for an RGB sensor.
     /// </summary>
+    [Serializable]
     public class RgbSensor : Sensor
     {
         // The format of the image type
@@ -170,6 +204,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// annotations. Concrete instances of this class will add
     /// data for their specific annotation type.
     /// </summary>
+    [Serializable]
     public abstract class Annotation
     {
         /// <summary>
@@ -200,6 +235,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// <summary>
     /// Bounding boxes for all of the labeled objects in a capture
     /// </summary>
+    [Serializable]
     public class BoundingBoxAnnotation : Annotation
     {
         public struct Entry
@@ -228,6 +264,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// The instance segmentation image recorded for a capture. This
     /// includes the data that associates a pixel color to an object.
     /// </summary>
+    [Serializable]
     public class InstanceSegmentation : Annotation
     {
         public struct Entry
@@ -259,6 +296,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// metrics. Concrete instances of this class will add
     /// data for their specific metric type.
     /// </summary>
+    [Serializable]
     public abstract class Metric
     {
         /// <summary>
@@ -285,6 +323,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// The object count metric records how many of a particular object are
     /// present in a capture.
     /// </summary>
+    [Serializable]
     public class ObjectCountMetric : Metric
     {
         public struct Entry

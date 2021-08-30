@@ -470,6 +470,8 @@ namespace UnityEngine.Perception.GroundTruth
                             dataColorBuffer, GraphicsFormat.R8G8B8A8_UNorm, (uint)width, (uint)height);
                     }
 
+                    SetPersistentSensorData("buffer", encodedData);
+
                     return !FileProducer.Write(captureFilename, encodedData)
                         ? AsyncRequest.Result.Error
                         : AsyncRequest.Result.Completed;
