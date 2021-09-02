@@ -25,11 +25,12 @@ namespace GroundTruthTests
                 SceneManager.UnloadSceneAsync(s);
 
             m_ScenesToUnload.Clear();
-
+#if false
             DatasetCapture.ResetSimulation();
             Time.timeScale = 1;
             if (Directory.Exists(DatasetCapture.OutputDirectory))
                 Directory.Delete(DatasetCapture.OutputDirectory, true);
+#endif
         }
 
         public void AddTestObjectForCleanup(Object @object) => m_ObjectsToDestroy.Add(@object);

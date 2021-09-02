@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using Unity.Collections;
 using Unity.Simulation;
 using UnityEngine;
+using UnityEngine.Perception.GroundTruth.SoloDesign;
 
 #pragma warning disable 649
 namespace UnityEngine.Perception.GroundTruth
@@ -14,12 +15,36 @@ namespace UnityEngine.Perception.GroundTruth
     /// Global manager for frame scheduling and output capture for simulations.
     /// Data capture follows the schema defined in *TODO: Expose schema publicly*
     /// </summary>
-    public static class DatasetCapture
+    public class DatasetCapture : MonoBehaviour
     {
-        static readonly Guid k_DatasetGuid = Guid.NewGuid();
-        internal static SimulationState SimulationState { get; private set; } = CreateSimulationData();
+        public static DatasetCapture Instance { get; protected set; }
 
-        internal static string OutputDirectory => SimulationState.GetOutputDirectoryNoCreate();
+        public PerceptionConsumer activeConsumer;
+
+        readonly Guid k_DatasetGuid = Guid.NewGuid();
+
+        SimulationState m_SimulationState;
+
+        void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this);
+                Debug.LogError($"The simulation started with more than one instance of DatasetCapture, destroying this one");
+            }
+            else
+            {
+                Instance = this;
+            }
+        }
+
+        internal SimulationState simulationState
+        {
+            get { return m_SimulationState ?? (m_SimulationState = CreateSimulationData()); }
+            private set => m_SimulationState = value;
+        }
+
+        internal string OutputDirectory => simulationState.GetOutputDirectoryNoCreate();
 
         /// <summary>
         /// The json metadata schema version the DatasetCapture's output conforms to.
@@ -29,21 +54,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// Called when the simulation ends. The simulation ends on playmode exit, application exit, or when <see cref="ResetSimulation"/> is called.
         /// </summary>
-        public static event Action SimulationEnding;
-
-        /// <summary>
-        /// Register a new ego. Used along with RegisterSensor to organize sensors under a top-level ego container. <seealso cref="RegisterSensor"/>
-        /// </summary>
-        /// <param name="description">A human-readable description for the ego</param>
-        /// <returns>An <see cref="EgoHandle"/>, which can be used to organize sensors under a common ego.</returns>
-        public static EgoHandle RegisterEgo(string description)
-        {
-            var ego = new EgoHandle(Guid.NewGuid(), description);
-            SimulationState.AddEgo(ego);
-            return ego;
-        }
-
-
+        public  event Action SimulationEnding;
 
         /// <summary>
         /// Register a new sensor under the given ego.
@@ -59,13 +70,14 @@ namespace UnityEngine.Perception.GroundTruth
         /// <returns>A <see cref="SensorHandle"/>, which should be used to check <see cref="SensorHandle.ShouldCaptureThisFrame"/> each frame to determine whether to capture (or render) that frame.
         /// It is also used to report captures, annotations, and metrics on the sensor.</returns>
         /// <exception cref="ArgumentException">Thrown if ego is invalid.</exception>
-        public static SensorHandle RegisterSensor(EgoHandle egoHandle, string modality, string description, float firstCaptureFrame, CaptureTriggerMode captureTriggerMode, float simulationDeltaTime, int framesBetweenCaptures, bool manualSensorAffectSimulationTiming = false)
+        public  SensorHandle RegisterSensor(EgoHandle egoHandle, string modality, string description, float firstCaptureFrame, CaptureTriggerMode captureTriggerMode, float simulationDeltaTime, int framesBetweenCaptures, bool manualSensorAffectSimulationTiming = false)
         {
-            if (!SimulationState.Contains(egoHandle.Id))
+#if false
+            if (!simulationState.Contains(egoHandle.Id))
                 throw new ArgumentException("Supplied ego is not part of the simulation.", nameof(egoHandle));
-
-            var sensor = new SensorHandle(Guid.NewGuid());
-            SimulationState.AddSensor(egoHandle, modality, description, firstCaptureFrame, captureTriggerMode, simulationDeltaTime, framesBetweenCaptures, manualSensorAffectSimulationTiming, sensor);
+#endif
+            var sensor = new SensorHandle(Guid.NewGuid(), this);
+            simulationState.AddSensor(egoHandle, modality, description, firstCaptureFrame, captureTriggerMode, simulationDeltaTime, framesBetweenCaptures, manualSensorAffectSimulationTiming, sensor);
             return sensor;
         }
 
@@ -78,7 +90,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <param name="description">Description of the annotation.</param>
         /// <param name="id">The ID for this metric. This allows metric types to be shared across simulations and sequences.</param>
         /// <returns>A MetricDefinition, which can be used during this simulation to report metrics.</returns>
-        public static MetricDefinition RegisterMetricDefinition(string name, string description = null, Guid id = default)
+        public  MetricDefinition RegisterMetricDefinition(string name, string description = null, Guid id = default)
         {
             return RegisterMetricDefinition<object>(name, null, description, id);
         }
@@ -94,9 +106,9 @@ namespace UnityEngine.Perception.GroundTruth
         /// <param name="id">The ID for this metric. This allows metric types to be shared across simulations and sequences.</param>
         /// <typeparam name="TSpec">The type of the <see cref="specValues"/> struct to write.</typeparam>
         /// <returns>A MetricDefinition, which can be used during this simulation to report metrics.</returns>
-        public static MetricDefinition RegisterMetricDefinition<TSpec>(string name, TSpec[] specValues, string description = null, Guid id = default)
+        public  MetricDefinition RegisterMetricDefinition<TSpec>(string name, TSpec[] specValues, string description = null, Guid id = default)
         {
-            return SimulationState.RegisterMetricDefinition(name, specValues, description, id);
+            return simulationState.RegisterMetricDefinition(name, specValues, description, id);
         }
 
         /// <summary>
@@ -108,7 +120,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <param name="format">Optional format name.</param>
         /// <param name="id">The ID for this annotation type. This allows annotation types to be shared across simulations and sequences.</param>
         /// <returns>An AnnotationDefinition. If the given <see cref="id"/> has already been defined, its AnnotationDefinition is returned.</returns>
-        public static AnnotationDefinition RegisterAnnotationDefinition(string name, string description = null, string format = "json", Guid id = default)
+        public  AnnotationDefinition RegisterAnnotationDefinition(string name, string description = null, string format = "json", Guid id = default)
         {
             return RegisterAnnotationDefinition<object>(name, null, description, format, id);
         }
@@ -124,9 +136,9 @@ namespace UnityEngine.Perception.GroundTruth
         /// <param name="id">The ID for this annotation type. This allows annotation types to be shared across simulations and sequences.</param>
         /// <typeparam name="TSpec">The type of the values for the spec array in the resulting json.</typeparam>
         /// <returns>An AnnotationDefinition. If the given <see cref="id"/> has already been defined, its AnnotationDefinition is returned.</returns>
-        public static AnnotationDefinition RegisterAnnotationDefinition<TSpec>(string name, TSpec[] specValues, string description = null, string format = "json", Guid id = default)
+        public  AnnotationDefinition RegisterAnnotationDefinition<TSpec>(string name, TSpec[] specValues, string description = null, string format = "json", Guid id = default)
         {
-            return SimulationState.RegisterAnnotationDefinition(name, specValues, description, format, id);
+            return simulationState.RegisterAnnotationDefinition(name, specValues, description, format, id);
         }
 
         /// <summary>
@@ -135,9 +147,9 @@ namespace UnityEngine.Perception.GroundTruth
         /// <param name="metricDefinition">The MetricDefinition associated with this metric. <see cref="RegisterMetricDefinition"/></param>
         /// <param name="values">An array to be converted to json and put in the "values" field of the metric</param>
         /// <typeparam name="T">The type of the <see cref="values"/> array</typeparam>
-        public static void ReportMetric<T>(MetricDefinition metricDefinition, T[] values)
+        public  void ReportMetric<T>(MetricDefinition metricDefinition, T[] values)
         {
-            SimulationState.ReportMetric(metricDefinition, values, default, default);
+            simulationState.ReportMetric(metricDefinition, values, default, default);
         }
 
         /// <summary>
@@ -145,9 +157,9 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         /// <param name="metricDefinition">The MetricDefinition associated with this metric. <see cref="RegisterMetricDefinition"/></param>
         /// <param name="valuesJsonArray">A string-based JSON array to be placed in the "values" field of the metric</param>
-        public static void ReportMetric(MetricDefinition metricDefinition, string valuesJsonArray)
+        public  void ReportMetric(MetricDefinition metricDefinition, string valuesJsonArray)
         {
-            SimulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), default, default);
+            simulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), default, default);
         }
 
         /// <summary>
@@ -155,23 +167,23 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         /// <param name="metricDefinition">The metric definition of the metric being reported</param>
         /// <returns>An <see cref="AsyncMetric"/> which should be used to report the metric values, potentially in a later frame</returns>
-        public static AsyncMetric ReportMetricAsync(MetricDefinition metricDefinition) => SimulationState.CreateAsyncMetric(metricDefinition);
+        public  AsyncMetric ReportMetricAsync(MetricDefinition metricDefinition) => simulationState.CreateAsyncMetric(metricDefinition);
 
         /// <summary>
         /// Starts a new sequence in the capture.
         /// </summary>
-        public static void StartNewSequence() => SimulationState.StartNewSequence();
+        public  void StartNewSequence() => simulationState.StartNewSequence();
 
-        internal static bool IsValid(Guid id) => SimulationState.Contains(id);
+        internal bool IsValid(Guid id) => simulationState.Contains(id);
 
-        static SimulationState CreateSimulationData()
+        SimulationState CreateSimulationData()
         {
             //TODO: Remove the Guid path when we have proper dataset merging in Unity Simulation and Thea
             return new SimulationState($"Dataset{k_DatasetGuid}");
         }
 
         [RuntimeInitializeOnLoadMethod]
-        static void OnInitializeOnLoad()
+         void OnInitializeOnLoad()
         {
             Manager.Instance.ShutdownNotification += ResetSimulation;
         }
@@ -179,12 +191,12 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// Stop the current simulation and start a new one. All pending data is written to disk before returning.
         /// </summary>
-        public static void ResetSimulation()
+        public  void ResetSimulation()
         {
             //this order ensures that exceptions thrown by End() do not prevent the state from being reset
             SimulationEnding?.Invoke();
-            var oldSimulationState = SimulationState;
-            SimulationState = CreateSimulationData();
+            var oldSimulationState = simulationState;
+            simulationState = CreateSimulationData();
             oldSimulationState.End();
         }
     }
@@ -210,14 +222,17 @@ namespace UnityEngine.Perception.GroundTruth
     /// </summary>
     public struct SensorHandle : IDisposable, IEquatable<SensorHandle>
     {
+        internal DatasetCapture datasetCapture { get; }
+
         /// <summary>
         /// The unique ID of the sensor. This ID is used to refer to this sensor in the json metadata.
         /// </summary>
         public Guid Id { get; }
 
-        internal SensorHandle(Guid id)
+        internal SensorHandle(Guid id, DatasetCapture datasetCapture)
         {
             Id = id;
+            this.datasetCapture = datasetCapture;
         }
 
         /// <summary>
@@ -225,11 +240,11 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         public bool Enabled
         {
-            get => DatasetCapture.SimulationState.IsEnabled(this);
+            get => datasetCapture.simulationState.IsEnabled(this);
             set
             {
                 CheckValid();
-                DatasetCapture.SimulationState.SetEnabled(this, value);
+                datasetCapture.simulationState.SetEnabled(this, value);
             }
         }
 
@@ -248,7 +263,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!annotationDefinition.IsValid)
                 throw new ArgumentException("The given annotationDefinition is invalid", nameof(annotationDefinition));
 
-            return DatasetCapture.SimulationState.ReportAnnotationFile(annotationDefinition, this, filename);
+            return datasetCapture.simulationState.ReportAnnotationFile(annotationDefinition, this, filename);
         }
 
         /// <summary>
@@ -267,7 +282,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!annotationDefinition.IsValid)
                 throw new ArgumentException("The given annotationDefinition is invalid", nameof(annotationDefinition));
 
-            return DatasetCapture.SimulationState.ReportAnnotationValues(annotationDefinition, this, values);
+            return datasetCapture.simulationState.ReportAnnotationValues(annotationDefinition, this, values);
         }
 
         /// <summary>
@@ -284,12 +299,12 @@ namespace UnityEngine.Perception.GroundTruth
             if (!annotationDefinition.IsValid)
                 throw new ArgumentException("The given annotationDefinition is invalid", nameof(annotationDefinition));
 
-            return DatasetCapture.SimulationState.ReportAnnotationAsync(annotationDefinition, this);
+            return datasetCapture.simulationState.ReportAnnotationAsync(annotationDefinition, this);
         }
 
         public string GetRgbCaptureFilename(string defaultFilename, params(string, object)[] additionalSensorValues)
         {
-            return DatasetCapture.SimulationState.GetRgbCaptureFilename(defaultFilename, additionalSensorValues);
+            return datasetCapture.simulationState.GetRgbCaptureFilename(defaultFilename, additionalSensorValues);
         }
 
         /// <summary>
@@ -306,21 +321,21 @@ namespace UnityEngine.Perception.GroundTruth
                 throw new InvalidOperationException("Capture reported in frame when ShouldCaptureThisFrame is false.");
             }
 
-            DatasetCapture.SimulationState.ReportCapture(this, filename, sensorSpatialData, additionalSensorValues);
+            datasetCapture.simulationState.ReportCapture(this, filename, sensorSpatialData, additionalSensorValues);
         }
 
         /// <summary>
         /// Whether the sensor should capture this frame. Sensors are expected to call this method each frame to determine whether
         /// they should capture during the frame. Captures should only be reported when this is true.
         /// </summary>
-        public bool ShouldCaptureThisFrame => DatasetCapture.SimulationState.ShouldCaptureThisFrame(this);
+        public bool ShouldCaptureThisFrame => datasetCapture.simulationState.ShouldCaptureThisFrame(this);
 
         /// <summary>
         /// Requests a capture from this sensor on the next rendered frame. Can only be used with manual capture mode (<see cref="PerceptionCamera.CaptureTriggerMode.Manual"/>).
         /// </summary>
         public void RequestCapture()
         {
-            DatasetCapture.SimulationState.SetNextCaptureTimeToNowForSensor(this);
+            datasetCapture.simulationState.SetNextCaptureTimeToNowForSensor(this);
         }
 
         /// <summary>
@@ -339,7 +354,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!ShouldCaptureThisFrame)
                 throw new InvalidOperationException($"Sensor-based metrics may only be reported when SensorHandle.ShouldCaptureThisFrame is true");
 
-            DatasetCapture.SimulationState.ReportMetric(metricDefinition, values, this, default);
+            datasetCapture.simulationState.ReportMetric(metricDefinition, values, this, default);
         }
 
         /// <summary>
@@ -354,7 +369,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!ShouldCaptureThisFrame)
                 throw new InvalidOperationException($"Sensor-based metrics may only be reported when SensorHandle.ShouldCaptureThisFrame is true");
 
-            DatasetCapture.SimulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), this, default);
+            datasetCapture.simulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), this, default);
         }
 
         /// <summary>
@@ -368,7 +383,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!ShouldCaptureThisFrame)
                 throw new InvalidOperationException($"Sensor-based metrics may only be reported when SensorHandle.ShouldCaptureThisFrame is true");
 
-            return DatasetCapture.SimulationState.CreateAsyncMetric(metricDefinition, this);
+            return datasetCapture.simulationState.CreateAsyncMetric(metricDefinition, this);
         }
 
         /// <summary>
@@ -382,7 +397,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// Returns whether this SensorHandle is valid in the current simulation. Nil SensorHandles are never valid.
         /// </summary>
-        public bool IsValid => DatasetCapture.IsValid(this.Id);
+        public bool IsValid => datasetCapture.IsValid(this.Id);
         /// <summary>
         /// Returns true if this SensorHandle was default-instantiated.
         /// </summary>
@@ -390,7 +405,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         void CheckValid()
         {
-            if (!DatasetCapture.IsValid(this.Id))
+            if (!datasetCapture.IsValid(this.Id))
                 throw new InvalidOperationException("SensorHandle has been disposed or its simulation has ended");
         }
 
@@ -608,8 +623,10 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         public readonly SensorHandle SensorHandle;
 
-        internal Annotation(SensorHandle sensorHandle, int step)
+        SimulationState m_SimulationState;
+        internal Annotation(SensorHandle sensorHandle, SimulationState simState, int step)
         {
+            m_SimulationState = simState;
             Id = Guid.NewGuid();
             SensorHandle = sensorHandle;
             Step = step;
@@ -636,7 +653,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!SensorHandle.ShouldCaptureThisFrame)
                 throw new InvalidOperationException($"Sensor-based metrics may only be reported when SensorHandle.ShouldCaptureThisFrame is true");
 
-            DatasetCapture.SimulationState.ReportMetric(metricDefinition, values, SensorHandle, this);
+            m_SimulationState.ReportMetric(metricDefinition, values, SensorHandle, this);
         }
 
         /// <summary>
@@ -655,7 +672,7 @@ namespace UnityEngine.Perception.GroundTruth
             if (!SensorHandle.ShouldCaptureThisFrame)
                 throw new InvalidOperationException($"Sensor-based metrics may only be reported when SensorHandle.ShouldCaptureThisFrame is true");
 
-            DatasetCapture.SimulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), SensorHandle, this);
+            m_SimulationState.ReportMetric(metricDefinition, new JRaw(valuesJsonArray), SensorHandle, this);
         }
 
         /// <summary>
@@ -663,7 +680,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// </summary>
         /// <param name="metricDefinition">The type of the metric.</param>
         /// <returns>A handle to an AsyncMetric, which can be used to report values for this metric in future frames.</returns>
-        public AsyncMetric ReportMetricAsync(MetricDefinition metricDefinition) => DatasetCapture.SimulationState.CreateAsyncMetric(metricDefinition, SensorHandle, this);
+        public AsyncMetric ReportMetricAsync(MetricDefinition metricDefinition) => m_SimulationState.CreateAsyncMetric(metricDefinition, SensorHandle, this);
 
         /// <inheritdoc/>
         public bool Equals(Annotation other)
@@ -807,11 +824,14 @@ namespace UnityEngine.Perception.GroundTruth
         /// The ID of the annotation type. Used in the json metadata to associate anntations with the type.
         /// </summary>
         public readonly Guid Id;
-        internal bool IsValid => DatasetCapture.IsValid(Id);
+        internal bool IsValid => m_SimulationState.IsValid(Id);
 
-        internal AnnotationDefinition(Guid id)
+        SimulationState m_SimulationState;
+
+        internal AnnotationDefinition(Guid id, SimulationState simState)
         {
             Id = id;
+            m_SimulationState = simState;
         }
     }
 

@@ -1,33 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine.Perception.GroundTruth.Exporters.Solo;
 
 namespace UnityEngine.Perception.GroundTruth.SoloDesign
 {
+    internal static class Utils
+    {
+        internal static int[] ToIntVector(Color32 c)
+        {
+            return new[] { (int)c.r, (int)c.g, (int)c.b, (int)c.a };
+        }
+
+        internal static float[] ToFloatVector(Vector2 v)
+        {
+            return new[] { v.x, v.y };
+        }
+
+        internal static float[] ToFloatVector(Vector3 v)
+        {
+            return new[] { v.x, v.y, v.z };
+        }
+    }
+
     /// <summary>
     /// Data generated from a perception simulation will be pushed to an active
     /// consumer.
     /// </summary>
-    public interface IPerceptionConsumer
+    public abstract class PerceptionConsumer : MonoBehaviour
     {
         /// <summary>
         /// Called when the simulation begins. Provides simulation wide metadata to
         /// the consumer.
         /// </summary>
         /// <param name="metadata">Metadata describing the active simulation</param>
-        void OnSimulationStarted(SimulationMetadata metadata);
+        public abstract void OnSimulationStarted(SimulationMetadata metadata);
+
+        public virtual void OnSensorRegistered(SensorDefinition sensor) { }
+
+        public virtual void OnAnnotationRegistered(AnnotationDefinition annotationDefinition)
+        {
+
+        }
+        public virtual void OnMetricRegistered() { }
+
         /// <summary>
         /// Called at the end of each frame. Contains all of the generated data for the
         /// frame. This method is called after the frame has entirely finished processing.
         /// </summary>
         /// <param name="frame">The frame data.</param>
-        void OnFrameGenerated(Frame frame);
+        public abstract void OnFrameGenerated(Frame frame);
+
         /// <summary>
         /// Called at the end of the simulation. Contains metadata describing the entire
         /// simulation process.
         /// </summary>
         /// <param name="metadata">Metadata describing the entire simulation process</param>
-        void OnSimulationCompleted(CompletionMetadata metadata);
+        public abstract void OnSimulationCompleted(CompletionMetadata metadata);
     }
 
     /// <summary>
@@ -77,8 +110,8 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     [Serializable]
     public class CompletionMetadata : SimulationMetadata
     {
-        public CompletionMetadata() : base()
-        {}
+        public CompletionMetadata()
+            : base() { }
 
         public struct Sequence
         {
@@ -104,13 +137,133 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         public List<Sequence> sequences;
     }
 
+    public interface IMessageProducer
+    {
+        void ToMessage(IMessageBuilder builder);
+    }
+
+    [Serializable]
+    public class SensorDefinition : IMessageProducer
+    {
+        public SensorDefinition(string id, string modality, string definition)
+        {
+            this.id = id;
+            this.modality = modality;
+            this.definition = definition;
+            this.firstCaptureFrame = 0;
+            this.captureTriggerMode = string.Empty;
+            this.simulationDeltaTime = 0.0f;
+            this.framesBetweenCaptures = 0;
+            this.manualSensorsAffectTiming = false;
+        }
+
+        public string id;
+        public string modality;
+        public string definition;
+        public float firstCaptureFrame;
+        public string captureTriggerMode;
+        public float simulationDeltaTime;
+        public int framesBetweenCaptures;
+        public bool manualSensorsAffectTiming;
+
+        public void ToMessage(IMessageBuilder builder)
+        {
+            builder.AddString("id", id);
+            builder.AddString("modality", modality);
+            builder.AddString("definition", definition);
+            builder.AddFloat("first_capture_frame", firstCaptureFrame);
+            builder.AddString("capture_trigger_mode", captureTriggerMode);
+            builder.AddFloat("simulation_delta_time", simulationDeltaTime);
+            builder.AddInt("frames_between_captures", framesBetweenCaptures);
+            builder.AddBoolean("manual_sensors_affect_timing", manualSensorsAffectTiming);
+        }
+    }
+
+    [Serializable]
+    public abstract class AnnotationDefinition : IMessageProducer
+    {
+        public string id = string.Empty;
+        public string description = string.Empty;
+        public string annotationType = string.Empty;
+
+        public AnnotationDefinition() { }
+
+        public AnnotationDefinition(string id, string description, string annotationType)
+        {
+            this.id = id;
+            this.description = description;
+            this.annotationType = annotationType;
+        }
+
+        public virtual void ToMessage(IMessageBuilder builder)
+        {
+            builder.AddString("id", id);
+            builder.AddString("description", description);
+            builder.AddString("annotation_type", annotationType);
+        }
+    }
+
+    [Serializable]
+    public class BoundingBoxAnnotationDefinition : AnnotationDefinition
+    {
+        static readonly string k_Id = "bounding box";
+        static readonly string k_Description = "Bounding box for each labeled object visible to the sensor";
+        static readonly string k_AnnotationType = "bounding box";
+
+        public BoundingBoxAnnotationDefinition() : base(k_Id, k_Description, k_AnnotationType) { }
+
+        public BoundingBoxAnnotationDefinition(IEnumerable<Entry> spec)
+            : base(k_Id, k_Description, k_AnnotationType)
+        {
+            this.spec = spec;
+        }
+
+        [Serializable]
+        public struct Entry : IMessageProducer
+        {
+            public Entry(int id, string name)
+            {
+                labelId = id;
+                labelName = name;
+            }
+
+            public int labelId;
+            public string labelName;
+            public void ToMessage(IMessageBuilder builder)
+            {
+                builder.AddInt("label_id", labelId);
+                builder.AddString("label_name", labelName);
+            }
+        }
+
+        public IEnumerable<Entry> spec;
+
+        public override void ToMessage(IMessageBuilder builder)
+        {
+            base.ToMessage(builder);
+            foreach (var e in spec)
+            {
+                var nested = builder.AddNestedMessageToVector("spec");
+                e.ToMessage(nested);
+            }
+        }
+    }
+
+    public class MetricDefinition : IMessageProducer
+    {
+        public void ToMessage(IMessageBuilder builder)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
     /// <summary>
     /// The top level structure that holds all of the artifacts of a simulation
     /// frame. This is only reported after all of the captures, annotations, and
     /// metrics are ready to report for a single frame.
     /// </summary>
     [Serializable]
-    public class Frame
+    public class Frame : IMessageProducer
     {
         public Frame(int frame, int sequence, int step)
         {
@@ -119,6 +272,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
             this.step = step;
             sensors = new List<Sensor>();
             annotations = new List<Annotation>();
+
             metrics = new List<Metric>();
         }
 
@@ -134,6 +288,9 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         /// The step in the sequence that this record is a part of
         /// </summary>
         public int step;
+
+        public float timestamp;
+
         /// <summary>
         /// A list of all of the sensor captures recorded for the frame.
         /// </summary>
@@ -142,17 +299,84 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         /// A list of all of the annotations recorded recorded for the frame.
         /// </summary>
         public List<Annotation> annotations;
+
         /// <summary>
         /// A list of all of the metrics recorded recorded for the frame.
         /// </summary>
         public List<Metric> metrics;
-    }
 
+        public void ToMessage(IMessageBuilder builder)
+        {
+            builder.AddInt("frame", frame);
+            builder.AddInt("sequence", sequence);
+            builder.AddInt("step", step);
+            foreach (var s in sensors)
+            {
+                var nested = builder.AddNestedMessageToVector("sensors");
+                s.ToMessage(nested);
+            }
+            foreach (var annotation in annotations)
+            {
+                var nested = builder.AddNestedMessageToVector("annotations");
+                annotation.ToMessage(nested);
+            }
+        }
+    }
+#if false
+    public class SoloConverter : JsonConverter
+    {
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            switch (value)
+            {
+                case Vector3 v3:
+                {
+                    writer.WriteStartArray();
+                    writer.WriteValue(v3.x);
+                    writer.WriteValue(v3.y);
+                    writer.WriteValue(v3.z);
+                    writer.WriteEndArray();
+                    break;
+                }
+                case Vector2 v2:
+                {
+                    writer.WriteStartArray();
+                    writer.WriteValue(v2.x);
+                    writer.WriteValue(v2.y);
+                    writer.WriteEndArray();
+                    break;
+                }
+                case Color32 rgba:
+                {
+                    writer.WriteStartArray();
+                    writer.WriteValue(rgba.r);
+                    writer.WriteValue(rgba.g);
+                    writer.WriteValue(rgba.b);
+                    writer.WriteValue(rgba.a);
+                    writer.WriteEndArray();
+                    break;
+                }
+            }
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            return null;
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            if (objectType == typeof(Vector3)) return true;
+            if (objectType == typeof(Vector2)) return true;
+            return objectType == typeof(Color32);
+        }
+    }
+#endif
     /// <summary>
     /// Abstract sensor class that holds all of the common information for a sensor.
     /// </summary>
     [Serializable]
-    public abstract class Sensor
+    public abstract class Sensor : IMessageProducer
     {
         /// <summary>
         /// The unique, human readable ID for the sensor.
@@ -162,6 +386,9 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         /// The type of the sensor.
         /// </summary>
         public string sensorType;
+
+        public string description;
+
         /// <summary>
         /// The position (xyz) of the sensor in the world.
         /// </summary>
@@ -178,11 +405,16 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         /// The current acceleration (xyz) of the sensor.
         /// </summary>
         public Vector3 acceleration;
-        /// <summary>
-        /// Additional key/value pair metadata that can be associated with
-        /// the sensor.
-        /// </summary>
-        public Dictionary<string, object> metadata;
+
+        public virtual void ToMessage(IMessageBuilder builder)
+        {
+            builder.AddString("id", Id);
+            builder.AddString("sensor_id", sensorType);
+            builder.AddFloatVector("position", Utils.ToFloatVector(position));
+            builder.AddFloatVector("rotation", Utils.ToFloatVector(rotation));
+            builder.AddFloatVector("velocity", Utils.ToFloatVector(velocity));
+            builder.AddFloatVector("acceleration", Utils.ToFloatVector(acceleration));
+        }
     }
 
     /// <summary>
@@ -193,10 +425,20 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     {
         // The format of the image type
         public string imageFormat;
+
         // The dimensions (width, height) of the image
         public Vector2 dimension;
+
         // The raw bytes of the image file
         public byte[] buffer;
+
+        public override void ToMessage(IMessageBuilder builder)
+        {
+            base.ToMessage(builder);
+            builder.AddString("image_format", imageFormat);
+            builder.AddFloatVector("dimension", Utils.ToFloatVector(dimension));
+            builder.AddPngImage("camera", buffer);
+        }
     }
 
     /// <summary>
@@ -205,7 +447,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
     /// data for their specific annotation type.
     /// </summary>
     [Serializable]
-    public abstract class Annotation
+    public abstract class Annotation : IMessageProducer
     {
         /// <summary>
         /// The unique, human readable ID for the annotation.
@@ -225,11 +467,14 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         /// class.
         /// </summary>
         public string annotationType;
-        /// <summary>
-        /// Additional key/value pair metadata that can be associated with
-        /// any record.
-        /// </summary>
-        public Dictionary<string, object> metadata;
+
+        public virtual void ToMessage(IMessageBuilder builder)
+        {
+            builder.AddString("id", Id);
+            builder.AddString("sensor_id", sensorId);
+            builder.AddString("description", description);
+            builder.AddString("annotation_type", annotationType);
+        }
     }
 
     /// <summary>
@@ -242,8 +487,12 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         {
             // The instance ID of the object
             public int instanceId;
+
+            public int labelId;
+
             // The type of the object
-            public string label;
+            public string labelName;
+
             /// <summary>
             /// (xy) pixel location of the object's bounding box
             /// </summary>
@@ -252,12 +501,31 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
             /// (width/height) dimensions of the bounding box
             /// </summary>
             public Vector2 dimension;
+
+            public void ToMessage(IMessageBuilder builder)
+            {
+                builder.AddInt("instance_id", instanceId);
+                builder.AddInt("label_id", labelId);
+                builder.AddString("label_name", labelName);
+                builder.AddFloatVector("origin", new[] { origin.x, origin.y });
+                builder.AddFloatVector("dimension", new[] { dimension.x, dimension.y });
+            }
         }
 
         /// <summary>
         /// The bounding boxes recorded by the annotator
         /// </summary>
         public List<Entry> boxes;
+
+        public override void ToMessage(IMessageBuilder builder)
+        {
+            base.ToMessage(builder);
+            foreach (var e in boxes)
+            {
+                var nested = builder.AddNestedMessageToVector("values");
+                e.ToMessage(nested);
+            }
+        }
     }
 
     /// <summary>
@@ -277,18 +545,41 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
             /// The color (rgba) value
             /// </summary>
             public Color32 rgba;
+
+            internal void ToMessage(IMessageBuilder builder)
+            {
+                builder.AddInt("instance_id", instanceId);
+                builder.AddIntVector("rgba", new[] { (int)rgba.r, (int)rgba.g, (int)rgba.b, (int)rgba.a });
+            }
         }
 
         /// <summary>
         /// This instance to pixel map
         /// </summary>
         public List<Entry> instances;
+
         // The format of the image type
         public string imageFormat;
+
         // The dimensions (width, height) of the image
         public Vector2 dimension;
+
         // The raw bytes of the image file
         public byte[] buffer;
+
+        public override void ToMessage(IMessageBuilder builder)
+        {
+            base.ToMessage(builder);
+            builder.AddString("image_format", imageFormat);
+            builder.AddFloatVector("dimension", new[] { dimension.x, dimension.y });
+            builder.AddPngImage("instance_segmentation", buffer);
+
+            foreach (var e in instances)
+            {
+                var nested = builder.AddNestedMessageToVector("instances");
+                e.ToMessage(nested);
+            }
+        }
     }
 
     /// <summary>
@@ -344,3 +635,4 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
         public List<Entry> objectCounts;
     }
 }
+

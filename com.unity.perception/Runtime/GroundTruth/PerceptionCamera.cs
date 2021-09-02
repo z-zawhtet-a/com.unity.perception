@@ -202,7 +202,7 @@ namespace UnityEngine.Perception.GroundTruth
 
             SetupVisualizationCamera();
 
-            DatasetCapture.SimulationEnding += OnSimulationEnding;
+            DatasetCapture.Instance.SimulationEnding += OnSimulationEnding;
         }
 
         void OnEnable()
@@ -303,7 +303,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         void OnDestroy()
         {
-            DatasetCapture.SimulationEnding -= OnSimulationEnding;
+            DatasetCapture.Instance.SimulationEnding -= OnSimulationEnding;
 
             OnSimulationEnding();
             CleanupVisualization();
@@ -319,8 +319,9 @@ namespace UnityEngine.Perception.GroundTruth
             if (m_SensorHandle.IsNil)
             {
                 m_EgoMarker = GetComponentInParent<Ego>();
-                var ego = m_EgoMarker == null ? DatasetCapture.RegisterEgo("") : m_EgoMarker.EgoHandle;
-                SensorHandle = DatasetCapture.RegisterSensor(
+//                var ego = m_EgoMarker == null ? DatasetCapture.RegisterEgo("") : m_EgoMarker.EgoHandle;
+                var ego = new EgoHandle();
+                SensorHandle = DatasetCapture.Instance.RegisterSensor(
                     ego, "camera", description, firstCaptureFrame, captureTriggerMode,
                     simulationDeltaTime, framesBetweenCaptures, manualSensorAffectSimulationTiming);
             }

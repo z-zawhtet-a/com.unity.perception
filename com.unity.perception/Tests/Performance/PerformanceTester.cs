@@ -81,12 +81,13 @@ namespace PerformanceTests
         [SetUp]
         public void SetUpTest()
         {
+#if false
             DatasetCapture.ResetSimulation();
             Time.timeScale = 1;
 
             if (Directory.Exists(DatasetCapture.OutputDirectory))
                 Directory.Delete(DatasetCapture.OutputDirectory, true);
-
+#endif
             Screen.SetResolution(m_Resolution.Item1, m_Resolution.Item2, true);
             (m_Camera, m_IdConfig, m_SsConfig, m_SceneRoot) = TestHelper.CreateThreeBlockScene();
 
@@ -108,6 +109,7 @@ namespace PerformanceTests
         [TearDown]
         public void TearDown()
         {
+#if false
             Object.DestroyImmediate(m_Camera.gameObject);
             Object.DestroyImmediate(m_SceneRoot.gameObject);
 
@@ -122,6 +124,7 @@ namespace PerformanceTests
             m_ActiveLabelers = null;
             m_IdConfig = null;
             m_SsConfig = null;
+#endif
         }
 
         [UnityTest, Performance]

@@ -15,6 +15,7 @@ namespace GroundTruthTests
     {
         [SerializeField]
         string expectedDatasetPath;
+#if false
         [Test]
         public void RegisterEgo_InEditMode_Throws()
         {
@@ -30,9 +31,11 @@ namespace GroundTruthTests
         {
             Assert.Throws<InvalidOperationException>(() => DatasetCapture.RegisterMetricDefinition(""));
         }
+
         [UnityTest]
         public IEnumerator SimpleData_GeneratesFullDataset_OnExitPlaymode()
         {
+
             yield return new EnterPlayMode();
             DatasetCapture.ResetSimulation();
             var ego = DatasetCapture.RegisterEgo("ego");
@@ -57,5 +60,6 @@ namespace GroundTruthTests
             Assert.True(sensor.ShouldCaptureThisFrame);
             yield return new ExitPlayMode();
         }
+#endif
     }
 }

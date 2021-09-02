@@ -17,10 +17,12 @@
             DontDestroyOnLoad(updaterObject);
         }
 
+        // TODO - all of this can be rolled into dataset capture
+
         void LateUpdate()
         {
             LabelManager.singleton.RegisterPendingLabels();
-            DatasetCapture.SimulationState?.Update();
+            DatasetCapture.Instance.simulationState?.Update();
         }
     }
 }

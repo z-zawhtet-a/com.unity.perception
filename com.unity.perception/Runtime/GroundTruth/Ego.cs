@@ -13,7 +13,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// A human-readable description for this Ego to be included in the dataset.
         /// </summary>
         public string Description;
-        EgoHandle m_EgoHandle;
+//        EgoHandle m_EgoHandle;
 
         /// <summary>
         /// The EgoHandle registered with DatasetCapture at runtime.
@@ -23,7 +23,8 @@ namespace UnityEngine.Perception.GroundTruth
             get
             {
                 EnsureEgoInitialized();
-                return m_EgoHandle;
+                //return m_EgoHandle;
+                return new EgoHandle();
             }
         }
 
@@ -34,8 +35,10 @@ namespace UnityEngine.Perception.GroundTruth
 
         void EnsureEgoInitialized()
         {
+#if false
             if (m_EgoHandle == default)
                 m_EgoHandle = DatasetCapture.RegisterEgo(Description);
+#endif
         }
     }
 }

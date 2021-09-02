@@ -10,7 +10,7 @@ namespace RandomizationTests.ScenarioTests
     {
         protected override void OnComplete()
         {
-            DatasetCapture.ResetSimulation();
+            DatasetCapture.Instance.ResetSimulation();
         }
     }
 }

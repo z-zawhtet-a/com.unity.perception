@@ -41,28 +41,24 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         }
 
         /// <inheritdoc/>
-        protected override void OnAwake()
-        {
-            m_IterationMetricDefinition = DatasetCapture.RegisterMetricDefinition(
-                "scenario_iteration", "Iteration information for dataset sequences",
-                Guid.Parse(k_ScenarioIterationMetricDefinitionId));
-        }
-
-        /// <inheritdoc/>
         protected override void OnStart()
         {
-            var randomSeedMetricDefinition = DatasetCapture.RegisterMetricDefinition(
+            m_IterationMetricDefinition = DatasetCapture.Instance.RegisterMetricDefinition(
+                "scenario_iteration", "Iteration information for dataset sequences",
+                Guid.Parse(k_ScenarioIterationMetricDefinitionId));
+
+            var randomSeedMetricDefinition = DatasetCapture.Instance.RegisterMetricDefinition(
                 "random-seed",
                 "The random seed used to initialize the random state of the simulation. Only triggered once per simulation.",
                 Guid.Parse("14adb394-46c0-47e8-a3f0-99e754483b76"));
-            DatasetCapture.ReportMetric(randomSeedMetricDefinition, new[] { genericConstants.randomSeed });
+            DatasetCapture.Instance.ReportMetric(randomSeedMetricDefinition, new[] { genericConstants.randomSeed });
         }
 
         /// <inheritdoc/>
         protected override void OnIterationStart()
         {
-            DatasetCapture.StartNewSequence();
-            DatasetCapture.ReportMetric(m_IterationMetricDefinition, new[]
+            DatasetCapture.Instance.StartNewSequence();
+            DatasetCapture.Instance.ReportMetric(m_IterationMetricDefinition, new[]
             {
                 new IterationMetricData { iteration = currentIteration }
             });
@@ -71,7 +67,7 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// <inheritdoc/>
         protected override void OnComplete()
         {
-            DatasetCapture.ResetSimulation();
+            DatasetCapture.Instance.ResetSimulation();
             Manager.Instance.Shutdown();
             Quit();
         }

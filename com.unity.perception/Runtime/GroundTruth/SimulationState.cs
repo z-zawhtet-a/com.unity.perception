@@ -28,7 +28,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         //IDatasetExporter _ActiveReporter = null;
 
-        IPerceptionConsumer _ActiveConsumer = null;
+//        PerceptionConsumer activeConsumer = null;
 
         // Always use the property SequenceTimeMs instead
         int m_FrameCountLastUpdatedSequenceTime;
@@ -63,6 +63,8 @@ namespace UnityEngine.Perception.GroundTruth
         public const string defaultOutputBaseDirectory = "defaultOutputBaseDirectory";
         public const string outputFormatMode = "outputFormatMode";
 
+        public bool IsValid(Guid guid) => true; // TODO obvs we need to do this for realz
+
         public bool IsRunning { get; private set; }
 
         public string OutputDirectory
@@ -83,17 +85,18 @@ namespace UnityEngine.Perception.GroundTruth
 
         public SimulationState(string outputDirectory)
         {
+#if false
             var go = GameObject.Find("SoloConsumer");
             if (go == null)
             {
                 go = new GameObject("SoloConsumer");
-                _ActiveConsumer = go.AddComponent<SoloConsumer>();
+                activeConsumer = go.AddComponent<SoloConsumer>();
             }
             else
             {
-                _ActiveConsumer = go.GetComponent<SoloConsumer>();
+                activeConsumer = go.GetComponent<SoloConsumer>();
             }
-
+#endif
             PlayerPrefs.SetString(defaultOutputBaseDirectory, Configuration.Instance.GetStorageBasePath());
             m_OutputDirectoryName = outputDirectory;
             var basePath = PlayerPrefs.GetString(userBaseDirectoryKey, string.Empty);
@@ -130,13 +133,9 @@ namespace UnityEngine.Perception.GroundTruth
         }
 
         //IDatasetExporter GetActiveReporter()
-        IPerceptionConsumer GetActiveConsumer()
+        PerceptionConsumer GetActiveConsumer()
         {
-
-
-
-
-            return _ActiveConsumer;
+            return DatasetCapture.Instance.activeConsumer;
         }
 
         public string GetRgbCaptureFilename(string defaultFilename, params(string, object)[] additionalSensorValues)
@@ -495,6 +494,8 @@ namespace UnityEngine.Perception.GroundTruth
             m_ActiveSensors.Add(sensor);
             m_Sensors.Add(sensor, sensorData);
             m_Ids.Add(sensor.Id);
+
+            GetActiveConsumer()?.OnSensorRegistered(new SensorDefinition("camera", modality, description));
         }
 
         float GetSequenceTimeOfNextCapture(SensorData sensorData)
@@ -710,8 +711,29 @@ namespace UnityEngine.Perception.GroundTruth
 
 //            GetActiveReporter()?.OnAnnotationRegistered(id, specValues); // <- Not sure about this one either
 
-            return new AnnotationDefinition(id);
+            if (name == "bounding box")
+            {
+                GetActiveConsumer()?.OnAnnotationRegistered(ToBoundingBoxDef(specValues));
+            }
+
+            return new AnnotationDefinition(id, this);
         }
+
+
+        BoundingBoxAnnotationDefinition ToBoundingBoxDef<TSpec>(TSpec[] specValues)
+        {
+            var entries = new List<BoundingBoxAnnotationDefinition.Entry>();
+            foreach (var spec in specValues)
+            {
+                if (spec is IdLabelConfig.LabelEntrySpec label)
+                {
+                    entries.Add(new BoundingBoxAnnotationDefinition.Entry(label.label_id, label.label_name));
+                }
+            }
+
+            return new BoundingBoxAnnotationDefinition(entries);
+        }
+
 
         public MetricDefinition RegisterMetricDefinition<TSpec>(string name, TSpec[] specValues, string description, Guid id)
         {
@@ -761,7 +783,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         public Annotation ReportAnnotationFile(AnnotationDefinition annotationDefinition, SensorHandle sensorHandle, string filename)
         {
-            var annotation = new Annotation(sensorHandle, AcquireStep());
+            var annotation = new Annotation(sensorHandle, this, AcquireStep());
             var pendingCapture = GetOrCreatePendingCaptureForThisFrame(sensorHandle);
             pendingCapture.Annotations.Add((annotation, new AnnotationData(annotationDefinition, filename, null)));
             return annotation;
@@ -769,7 +791,7 @@ namespace UnityEngine.Perception.GroundTruth
 
         public Annotation ReportAnnotationValues<T>(AnnotationDefinition annotationDefinition, SensorHandle sensorHandle, T[] values)
         {
-            var annotation = new Annotation(sensorHandle, AcquireStep());
+            var annotation = new Annotation(sensorHandle, this, AcquireStep());
             var pendingCapture = GetOrCreatePendingCaptureForThisFrame(sensorHandle);
             var valuesJson = new JArray();
             foreach (var value in values)

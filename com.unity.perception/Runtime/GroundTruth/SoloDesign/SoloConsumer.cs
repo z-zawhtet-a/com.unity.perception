@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 
 namespace UnityEngine.Perception.GroundTruth.SoloDesign
 {
-    public class SoloConsumer : MonoBehaviour, IPerceptionConsumer
+    public class SoloConsumer : PerceptionConsumer
     {
         public string _baseDirectory = "D:/PerceptionOutput/SoloConsumer";
         public string soloDatasetName = "solo";
@@ -15,7 +15,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
 
         SimulationMetadata m_CurrentMetadata;
 
-        public void OnSimulationStarted(SimulationMetadata metadata)
+        public override void OnSimulationStarted(SimulationMetadata metadata)
         {
             Debug.Log("SC - On Simulation Started");
             m_CurrentMetadata = metadata;
@@ -64,7 +64,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
             File.WriteAllText(filePath, contents);
         }
 
-        public void OnFrameGenerated(Frame frame)
+        public override void OnFrameGenerated(Frame frame)
         {
             var path = GetSequenceDirectoryPath(frame);
             path = Path.Combine(path, $"step{frame.step}.frame_data.json");
@@ -74,7 +74,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
             Debug.Log("SC - On Frame Generated");
         }
 
-        public void OnSimulationCompleted(CompletionMetadata metadata)
+        public override void OnSimulationCompleted(CompletionMetadata metadata)
         {
             Debug.Log("SC - On Simulation Completed");
         }
@@ -201,7 +201,7 @@ namespace UnityEngine.Perception.GroundTruth.SoloDesign
                 values.Add(new JObject
                 {
                     ["frame"] = frame.frame,
-                    ["label_name"] = box.label,
+                    ["label_name"] = box.labelName,
                     ["instance_id"] = box.instanceId,
                     ["origin"] = FromVector2(box.origin),
                     ["dimension"] = FromVector2(box.dimension)

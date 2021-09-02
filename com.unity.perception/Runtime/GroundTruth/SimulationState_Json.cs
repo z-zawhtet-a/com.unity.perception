@@ -141,11 +141,12 @@ namespace UnityEngine.Perception.GroundTruth
             {
                 Id = "camera",
                 sensorType = "camera",
+                description = "this is the description of the sensor",
                 position = Vector3.zero,
                 rotation = Vector3.zero,
                 velocity = Vector3.zero,
                 acceleration = Vector3.zero,
-                metadata = new Dictionary<string, object>(),
+//                metadata = new Dictionary<string, object>(),
                 imageFormat = "png",
                 dimension = Vector2.zero,
                 buffer = null
@@ -164,6 +165,9 @@ namespace UnityEngine.Perception.GroundTruth
 
             return new Frame(pendingCapture.FrameCount, seqId, pendingCapture.Step);
         }
+
+
+
 
         void WritePendingCaptures(bool flush = false, bool writeCapturesFromThisFrame = false)
         {
@@ -200,7 +204,7 @@ namespace UnityEngine.Perception.GroundTruth
                     sensorId = "camera",
                     description = "Labeled bounding boxes",
                     annotationType = "bounding box labeler",
-                    metadata = new Dictionary<string, object>(),
+//                    metadata = new Dictionary<string, object>(),
                     boxes = new List<BoundingBoxAnnotation.Entry>()
                 };
 
@@ -211,7 +215,8 @@ namespace UnityEngine.Perception.GroundTruth
                         var entry = new BoundingBoxAnnotation.Entry
                         {
                             instanceId = (int)e.instance_id,
-                            label = e.label_name,
+                            labelId = e.label_id,
+                            labelName = e.label_name,
                             origin = new Vector2{x = e.x, y = e.y},
                             dimension = new Vector2{x = e.width, y = e.height}
                         };
@@ -231,7 +236,7 @@ namespace UnityEngine.Perception.GroundTruth
                     sensorId = "camera",
                     description = "instance segmentation blah blah blah",
                     annotationType = "instance segmentation labeler",
-                    metadata = new Dictionary<string, object>(),
+//                    metadata = new Dictionary<string, object>(),
                     instances = new List<InstanceSegmentation.Entry>(),
                     dimension = Vector2.zero,
                     imageFormat = "png"
@@ -308,7 +313,7 @@ namespace UnityEngine.Perception.GroundTruth
                         velocity = capture.SensorSpatialData.EgoVelocity ?? Vector3.zero,
                         acceleration = capture.SensorSpatialData.EgoAcceleration ?? Vector3.zero,
                         buffer = buffer,
-                        metadata = new Dictionary<string, object>()
+//                        metadata = new Dictionary<string, object>()
                     }
                 };
             }
