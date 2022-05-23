@@ -1,11 +1,17 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEditor;
+#if !UNITY_EDITOR_LINUX
+using UnityEditor.Perception.Visualizer;
+#endif
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Perception.GroundTruth;
+using UnityEngine.Perception.GroundTruth.Consumers;
+using UnityEngine.Perception.Settings;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 #if MOQ_PRESENT
@@ -22,7 +28,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator EditorPause_DoesNotLogErrors()
         {
-            ResetScene();
             var cameraObject = SetupCamera(p =>
             {
                 var idLabelConfig = ScriptableObject.CreateInstance<IdLabelConfig>();
@@ -31,7 +36,16 @@ namespace EditorTests
                 p.AddLabeler(new RenderedObjectInfoLabeler(idLabelConfig));
             });
             cameraObject.name = "Camera";
+
+            PerceptionSettings.instance.endpoint = new PerceptionEndpoint();
+
             yield return new EnterPlayMode();
+
+            var cam = GameObject.Find("Camera");
+            Assert.NotNull(cam);
+            var perceptionCamera = cam.GetComponent<PerceptionCamera>();
+            Assert.NotNull(perceptionCamera);
+
             var expectedFirstFrame = Time.frameCount;
             yield return null;
             EditorApplication.isPaused = true;
@@ -44,35 +58,79 @@ namespace EditorTests
             var expectedLastFrame = Time.frameCount;
             yield return null;
 
-            DatasetCapture.ResetSimulation();
+            var endpoint = DatasetCapture.currentSimulation.consumerEndpoint as PerceptionEndpoint;
 
-            var capturesPath = Path.Combine(DatasetCapture.OutputDirectory, "captures_000.json");
-            var capturesJson = File.ReadAllText(capturesPath);
-            for (int iFrameCount = expectedFirstFrame; iFrameCount <= expectedLastFrame; iFrameCount++)
+            var capturesPath = endpoint != null ? endpoint.datasetPath : string.Empty;
+
+            Assert.IsFalse(string.IsNullOrEmpty(capturesPath));
+
+            DatasetCapture.ResetSimulation();
+            var capturesJson = File.ReadAllText(Path.Combine(capturesPath, "captures_000.json"));
+            for (var iFrameCount = expectedFirstFrame; iFrameCount <= expectedLastFrame; iFrameCount++)
             {
-                var imagePath = $"{GameObject.Find("Camera").GetComponent<PerceptionCamera>().rgbDirectory}/rgb_{iFrameCount}";
-                StringAssert.Contains(imagePath, capturesJson);
+                StringAssert.Contains($"rgb_{iFrameCount}", capturesJson);
             }
 
             yield return new ExitPlayMode();
         }
 
-        static void ResetScene()
+#if !UNITY_EDITOR_LINUX
+        //[Test]
+        //[Category("Python")]
+        public void VisualizerInstallationTest()
         {
-            int sceneCount = SceneManager.sceneCount;
-            for (int i = sceneCount - 1; i >= 0; i--)
-            {
-                EditorSceneManager.CloseScene(SceneManager.GetSceneAt(i), true);
-            }
-
-            EditorSceneManager.NewScene(NewSceneSetup.EmptyScene);
+            var cameraObject = SetupCamera(null);
+            cameraObject.GetComponent<PerceptionCamera>();
+#if UNITY_EDITOR_WIN
+            var packagesPath = Path.GetFullPath(Application.dataPath.Replace("/Assets", "/Library/PythonInstall/Scripts"));
+            packagesPath = packagesPath.Replace("/", "\\");
+#elif UNITY_EDITOR_OSX
+            var packagesPath = Path.GetFullPath(Application.dataPath.Replace("/Assets","/Library/PythonInstall/bin"));
+#endif
+            // Install the Visualizer and check if it exists
+            InstallOrUninstallVisualizerAsync(packagesPath, installFlag:true);
+            string[] files = Directory.GetFiles(packagesPath, "datasetvisualizer.*");
+            Assert.IsTrue(files.Length > 0);
+            // Uninstall the visualizer after check
+            InstallOrUninstallVisualizerAsync(packagesPath, installFlag:false);
         }
+
+        static void InstallOrUninstallVisualizerAsync(string packagesPath, bool installFlag)
+        {
+            const int steps = 3;
+            var exitCode = 0;
+            // If install flag is true, install the visualizer
+            if (installFlag)
+            {
+                EditorUtility.DisplayProgressBar("Setting up the Visualizer", "Installing Visualizer (This may take a few minutes)", 2f / steps);
+                Task.WaitAll(VisualizerInstaller.InstallationCommand(ref exitCode, packagesPath));
+                if (exitCode != 0)
+                {
+                    Debug.LogWarning("Fail to Install the Visualizer");
+                    EditorUtility.ClearProgressBar();
+                    return;
+                }
+            }
+            // if install flag is false, uninstall the visualizer
+            else
+            {
+                EditorUtility.DisplayProgressBar("Uninstall the Visualizer", "Uninstalling Visualizer (This may take a few minutes)", 2f / steps);
+                Task.WaitAll(VisualizerInstaller.UninstallCommand(ref exitCode, packagesPath));
+                if (exitCode != 0)
+                {
+                    Debug.LogWarning("Fail to Uninstall the Visualizer");
+                    EditorUtility.ClearProgressBar();
+                    return;
+                }
+            }
+            EditorUtility.ClearProgressBar();
+        }
+#endif
 
 #if MOQ_PRESENT
         [UnityTest]
         public IEnumerator AddLabelerAfterStart_ShouldInitialize()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var camera = SetupCamera(null);
             var mockLabeler = new Mock<CameraLabeler>();
@@ -85,7 +143,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator Labeler_ShouldRunCallbacksInFirstFrame()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var camera = SetupCamera(null);
@@ -101,7 +158,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator Labeler_ShouldNotRunCallbacksWhenCameraDisabled()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var camera = SetupCamera(null);
@@ -120,7 +176,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator AddAndRemoveLabelerInSameFrame_ShouldDoNothing()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var cameraObject = SetupCamera(null);
@@ -138,7 +193,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator RemoveLabeler_ShouldCallCleanup()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var cameraObject = SetupCamera(null);
@@ -152,7 +206,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator RemoveLabeler_OnLabelerNotAdded_ShouldNotCallCleanup()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var cameraObject = SetupCamera(null);
@@ -165,7 +218,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator DestroyPerceptionCameraObject_ShouldCallCleanup()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             var cameraObject = SetupCamera(null);
@@ -179,7 +231,6 @@ namespace EditorTests
         [UnityTest]
         public IEnumerator SetupThrows_ShouldDisable()
         {
-            ResetScene();
             yield return new EnterPlayMode();
             var mockLabeler = new Mock<CameraLabeler>();
             mockLabeler.Protected().Setup("Setup").Throws<InvalidOperationException>();

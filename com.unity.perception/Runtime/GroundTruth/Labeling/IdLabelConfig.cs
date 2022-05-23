@@ -2,8 +2,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Unity.Collections;
+using UnityEngine.Perception.GroundTruth.DataModel;
 
 namespace UnityEngine.Perception.GroundTruth {
     /// <summary>
@@ -12,8 +12,6 @@ namespace UnityEngine.Perception.GroundTruth {
     [CreateAssetMenu(fileName = "IdLabelConfig", menuName = "Perception/ID Label Config", order = 1)]
     public class IdLabelConfig : LabelConfig<IdLabelEntry>
     {
-
-
         /// <summary>
         /// Whether the inspector will auto-assign ids based on the id of the first element.
         /// </summary>
@@ -72,8 +70,11 @@ namespace UnityEngine.Perception.GroundTruth {
             m_LabelEntryMatchCache = null;
         }
 
+        /// <summary>
+        /// A structure representing a label entry for writing out to datasets.
+        /// </summary>
         [SuppressMessage("ReSharper", "InconsistentNaming")]
-        internal struct LabelEntrySpec
+        public struct LabelEntrySpec : IMessageProducer
         {
             /// <summary>
             /// The label id prepared for reporting in the annotation
@@ -85,9 +86,19 @@ namespace UnityEngine.Perception.GroundTruth {
             /// </summary>
             [UsedImplicitly]
             public string label_name;
+
+            /// <inheritdoc/>
+            public void ToMessage(IMessageBuilder builder)
+            {
+                builder.AddInt("label_id", label_id);
+                builder.AddString("label_name", label_name);
+            }
         }
 
-        internal LabelEntrySpec[] GetAnnotationSpecification()
+        /// <summary>
+        /// Returns the label entries as structures suited for writing out to JSON datasets.
+        /// </summary>
+        public LabelEntrySpec[] GetAnnotationSpecification()
         {
             return labelEntries.Select((l) => new LabelEntrySpec()
             {

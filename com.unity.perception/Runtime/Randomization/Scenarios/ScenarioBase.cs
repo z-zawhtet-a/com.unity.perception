@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Perception.Randomization.Parameters;
@@ -153,19 +154,28 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// <param name="commandLineArg">The command line argument to look for</param>
         protected void LoadConfigurationFromCommandLine(string commandLineArg="--scenario-config-file")
         {
-            var args = Environment.GetCommandLineArgs();
             var filePath = string.Empty;
-            for (var i = 0; i < args.Length - 1; i++)
+
+            Debug.Log($"application args {string.Join(" ", Environment.GetCommandLineArgs())}");
+            var args = Environment.GetCommandLineArgs();
+            foreach (var arg in args)
             {
-                if (args[i] != "--scenario-config-file")
-                    continue;
-                filePath = args[i + 1];
-                break;
+                if (arg.Contains(commandLineArg))
+                {
+                    var split = arg.Split('=');
+                    if (split.Length != 2)
+                    {
+                        throw new Exception($"Invalid configuration {string.Join(" ", Environment.GetCommandLineArgs())}");
+                    }
+
+                    filePath = split[1];
+                    break;
+                }
             }
 
             if (string.IsNullOrEmpty(filePath))
             {
-                Debug.Log("No --scenario-config-file command line arg specified. " +
+                Debug.Log($"No {commandLineArg} command line arg specified. " +
                     "Proceeding with editor assigned scenario configuration values.");
                 return;
             }
@@ -178,6 +188,16 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         /// </summary>
         protected virtual void LoadConfigurationAsset()
         {
+            configuration = null;
+
+#if UNITY_SIMULATION_CORE_PRESENT
+            if (Unity.Simulation.Configuration.Instance.IsSimulationRunningInCloud())
+            {
+                var filePath = new Uri(Unity.Simulation.Configuration.Instance.SimulationConfig.app_param_uri).LocalPath;
+                LoadConfigurationFromFile(filePath);
+                return;
+            }
+#endif
             LoadConfigurationFromCommandLine();
         }
 
@@ -272,10 +292,19 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         void Awake()
         {
             activeScenario = this;
+            try
+            {
 #if !UNITY_EDITOR
-            LoadConfigurationAsset();
+                LoadConfigurationAsset();
 #endif
-            DeserializeConfiguration();
+                DeserializeConfiguration();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message);
+                Application.Quit();
+            }
+
             OnAwake();
             foreach (var randomizer in activeRandomizers)
                 randomizer.Awake();
@@ -328,26 +357,95 @@ namespace UnityEngine.Perception.Randomization.Scenarios
         }
         #endregion
 
+        static void QuitApplication(Exception e)
+        {
+            Debug.LogException(e);
+            // save any game data here
+#if UNITY_EDITOR
+            // Application.Quit() does not work in the editor so
+            // UnityEditor.EditorApplication.isPlaying need to be set to false to end the game
+            EditorApplication.isPlaying = false;
+#else
+            Application.Quit(-1);
+#endif
+        }
+
         void IterationLoop()
         {
             // Increment iteration and cleanup last iteration
             if (isIterationComplete)
             {
-                IncrementIteration();
+                try
+                {
+                    IncrementIteration();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[IncrementIteration] scenario {GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
+
                 currentIterationFrame = 0;
                 foreach (var randomizer in activeRandomizers)
-                    randomizer.IterationEnd();
-                OnIterationEnd();
+                {
+                    try
+                    {
+                        randomizer.IterationEnd();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[IterationEnd] randomizer {randomizer.GetType()} thrown an exception {e.Message}");
+                        QuitApplication(e);
+                    }
+                }
+
+                try
+                {
+                    OnIterationEnd();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[OnIterationEnd] scenario {GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
             }
 
             // Quit if scenario is complete
             if (isScenarioComplete)
             {
                 foreach (var randomizer in activeRandomizers)
-                    randomizer.ScenarioComplete();
-                OnComplete();
-                state = State.Idle;
-                OnIdle();
+                {
+                    try
+                    {
+                        randomizer.ScenarioComplete();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogError($"[ScenarioComplete] randomizer {randomizer.GetType()} thrown an exception {e.Message}");
+                        QuitApplication(e);
+                    }
+                }
+
+                try
+                {
+                    OnComplete();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[OnComplete] scenario {GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
+
+                try
+                {
+                    state = State.Idle;
+                    OnIdle();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[OnIdle] scenario {GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
                 return;
             }
 
@@ -355,7 +453,15 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             if (currentIterationFrame == 0)
             {
                 ResetRandomStateOnIteration();
-                OnIterationStart();
+                try
+                {
+                    OnIterationStart();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[OnIterationStart] scenario {GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
 
                 int iterationStartCount = 0;
                 do
@@ -365,7 +471,16 @@ namespace UnityEngine.Perception.Randomization.Scenarios
                     iterationStartCount++;
                     foreach (var randomizer in activeRandomizers)
                     {
-                        randomizer.IterationStart();
+                        try
+                        {
+                            randomizer.IterationStart();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[IterationStart] randomizer {randomizer.GetType()} thrown an exception {e.Message}");
+                            QuitApplication(e);
+                        }
+
                         if (m_ShouldRestartIteration)
                             break;
 
@@ -387,9 +502,29 @@ namespace UnityEngine.Perception.Randomization.Scenarios
             }
 
             // Perform new frame tasks
-            OnUpdate();
+            try
+            {
+                OnUpdate();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[OnUpdate] scenario {GetType()} thrown an exception {e.Message}");
+                QuitApplication(e);
+            }
+
             foreach (var randomizer in activeRandomizers)
-                randomizer.Update();
+            {
+                try
+                {
+                    randomizer.Update();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[OnUpdate] randomizer {randomizer.GetType()} thrown an exception {e.Message}");
+                    QuitApplication(e);
+                }
+            }
+
 
             // Iterate scenario frame count
             if (!m_ShouldDelayIteration)
