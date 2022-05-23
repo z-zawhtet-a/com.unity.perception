@@ -8,7 +8,6 @@ Steps included in this phase of the tutorial:
 * [Step 1: Setup Unity Account, Unity Simulation, and Cloud Project](#step-1)
 * [Step 2: Run Project on Unity Simulation](#step-2)
 * [Step 3: Keep Track of Your Runs Using the Unity Simulation Command-Line Interface](#step-3)
-* [Step 4: Analyze the Dataset using Dataset Insights](#step-4)
 
 ### <a name="step-1">Step 1: Setup Unity Account, Unity Simulation, and Cloud Project</a> 
 
@@ -17,7 +16,7 @@ In order to use Unity Simulation, you need to first create a Unity account or lo
 * **:green_circle: Action** Click on the _**Cloud**_ button at the top-right corner of Unity Editor to open the _**Services**_ tab. 
 
 <p align="center">
-<img src="Images/cloud_icon.png" width="400"/>
+<img src="../images/Tutorial/Images/cloud_icon.png" width="400"/>
 </p>
 
 * **:green_circle: Action** Click the ***General settings***.
@@ -25,7 +24,7 @@ In order to use Unity Simulation, you need to first create a Unity account or lo
 This will open the ***Services*** tab of the ***Project Settings*** window. If you have not logged in yet, you will see a message noting that you are signed out:
 
 <p align="center">
-<img src="Images/signin.png" width="600"/>
+<img src="../images/Tutorial/Images/signin.png" width="600"/>
 </p>
 
 * **:green_circle: Action**: Click _**Sign in...**_ and follow the steps in the window that opens to sign in or create a Unity account.
@@ -42,7 +41,7 @@ It is now time to connect your local Unity project to a cloud project.
 If you have used Unity before, you might have set up multiple organizations for your account. In that case, choose whichever you would like to associate with this project.
 
 <p align="center">
-<img src="Images/create_proj.png" width="600"/>
+<img src="../images/Tutorial/Images/create_proj.png" width="600"/>
 </p>
 
 * **:green_circle: Action**: Click _**Create Project ID**_ to create a new cloud project and connect your local project to it.
@@ -59,20 +58,20 @@ In order to make sure our builds are compatible with Unity Simulation, we need t
 * **:green_circle: Action**: In the window that opens, navigate to the _**Player**_ tab, find the _**Scripting Backend**_ setting (under _**Other Settings**_), and change it to _**Mono**_:
 
 <p align="center">
-<img src="Images/mono.png" width="800"/>
+<img src="../images/Tutorial/Images/mono.png" width="800"/>
 </p>
 
 * **:green_circle: Action**: Change _**Fullscreen Mode**_ to _**Windowed**_ and set a width and height of 800 by 600.
 
 <p align="center">
-<img src="Images/windowed.png" width="600"/>
+<img src="../images/Tutorial/Images/windowed.png" width="600"/>
 </p>
 
 * **:green_circle: Action**: Close _**Project Settings**_. 
 * **:green_circle: Action**: From the top menu bar, open _**Window -> Run in Unity Simulation**_.
 
 <p align="center">
-<img src="Images/runinusim.png" width="600"/>
+<img src="../images/Tutorial/Images/runinusim.png" width="600"/>
 </p>
 
 Here, you can specify a name for the run, the number of Iterations the Scenario will execute for, and the number of Instances (number of nodes the work will be distributed across) for the run. This window automatically picks the currently active Scene and Scenario to run in Unity Simulation.
@@ -88,7 +87,7 @@ Your project will now be built and then uploaded to Unity Simulation and run. Th
 * **:green_circle: Action**: Once the operation is complete, you can find the **Execution ID** of this Unity Simulation run in the **Console** tab and the ***Run in Unity Simulation*** Window: 
 
 <p align="center">
-<img src="Images/build_uploaded.png" width="600"/>
+<img src="../images/Tutorial/Images/build_uploaded.png" width="600"/>
 </p>
 
 ### <a name="step-3">Step 3: Keep Track of Your Runs Using the Unity Simulation Command-Line Interface</a> 
@@ -144,7 +143,7 @@ This command will ask you to press Enter to open a browser for you to login to y
 Once you have logged you will see this page:
 
 <p align="center">
-<img src="Images/usim_login.png" width="400"/>
+<img src="../images/Tutorial/Images/usim_login.png" width="400"/>
 </p>
 
 > :warning: On MacOS, you might get errors related to permissions. If that is the case, modify the permissions on the `~/.usim` folder and its contents to give your user full read and write permission.
@@ -245,82 +244,7 @@ Here is an example output of this command, indicating that there are 20 nodes, a
  
  * **:green_circle: Action**: Open the manifest file to check it. Make sure there are links to various types of output and check a few of the links to see if they work.
 
-
-### <a name="step-4">Step 4: Analyze the Dataset using Dataset Insights</a> 
-
- In order to download the actual data from your run, we will now use Dataset Insights again. This time though, we will utilize some of the lines that were commented in our previous use with locally generated data.
-
- * **:green_circle: Action**: Open the Dataset Insights Jupyter notebook again, using the command below:
- 
- `docker run -p 8888:8888 -v <download path>/data:/data -t unitytechnologies/datasetinsights:latest`
-
-> :information_source: If you get an error about the format of the command, try the command again **with quotation marks** around the folder mapping argument, i.e. `"<download path>/data:/data"`.
-
-In the above command, replace `<download path>` with the location on your computer in which you wish to download your data.
-
-Once the Docker image is running, the rest of the workflow is quite similar to what we did in Phase 1, with certain differences caused by the need to download the data from Unity Simulation.
-
-* **:green_circle: Action**: Open a web browser and navigate to `http://localhost:8888` to open the Jupyter notebook.
-* **:green_circle: Action**: Navigate to the `datasetinsights/notebooks` folder and open `Perception_Statistics.ipynb`.
-* **:green_circle: Action**: In the `data_root = /data/<GUID>` line, the `<GUID>` part will be the location inside your `<download path>` where the data will be downloaded. Therefore, you can just remove it so as to have data downloaded directly to the path you previously specified:
-
-<p align="center">
-<img src="Images/di_usim_1.png" width="900"/>
-</p>
-
-The next few lines of code pertain to setting up your notebook for downloading data from Unity Simulation. 
-
-* **:green_circle: Action**: In the block of code titled "Unity Simulation [Optional]", uncomment the lines that assign values to variables, and insert the correct values, based on information from your Unity Simulation run. 
-
-We have previously learned how to obtain the `run_execution_id` and `project_id`. You can remove the value already present for `annotation_definition_id` and leave it blank. What's left is the `access_token`.
-
-* **:green_circle: Action**: Return to your command-line interface and run the `usim inspect auth` command.
-
-MacOS:
- `USimCLI/mac/usim inspect auth`
-
-If you receive errors regarding authentication, your token might have timed out. Repeat the login step (`usim login auth`) to login again and fix this issue.
-
-A sample output from `usim inspect auth` will look like below:
-
-```
-Protect your credentials. They may be used to impersonate your requests.
-access token: Bearer 0CfQbhJ6gjYIHjC6BaP5gkYn1x5xtAp7ZA9I003fTNT1sFp
-expires in: 2:00:05.236227
-expired: False
-refresh token: FW4c3YRD4IXi6qQHv3Y9W-rwg59K7k0Te9myKe7Zo6M003f.k4Dqo0tuoBdf-ncm003fX2RAHQ
-updated: 2020-10-02 14:50:11.412979
-```
-
-The `access_token` you need for your Dataset Insights notebook is the access token shown by the above command, minus the `'Bearer '` part. So, in this case, we should input `0CfQbhJ6gjYIHjC6BaP5gkYn1x5xtAp7ZA9I003fTNT1sFp` in the notebook. 
-
-* **:green_circle: Action**: Copy the access token excluding the `'Bearer '` part to the corresponding field in the Dataset Insights notebook.
-
-Once you have entered all the information, the block of code should look like the screenshot below (the actual values you input will be different):
-
-<p align="center">
-<img src="Images/di_usim_2.png" width="800"/>
-</p>
-
-
-* **:green_circle: Action**: Continue to the next code block and run it to download all the metadata files from the generated dataset. This includes JSON files and logs but does not include images (which will be downloaded later). 
-
-You will see a progress bar while the data downloads:
-
-<p align="center">
-<img src="Images/di_usim_3.png" width="800"/>
-</p>
-
-
-The next couple of code blocks (under "Load dataset metadata") analyze the downloaded metadata and display a table containing annotation-definition-ids for the various metrics defined in the dataset.
-
-* **:green_circle: Action**: Once you reach the code block titled "Built-in Statistics", make sure the value assigned to the field `rendered_object_info_definition_id` matches the id displayed for this metric in the table output by the code block immediately before it. The screenshot below demonstrates this (note that your ids might differ from the ones here):
-
-<p align="center">
-<img src="Images/di_usim_4.png" width="800"/>
-</p>
-
-Follow the rest of the steps inside the notebook to generate a variety of plots and stats. Keep in mind that this notebook is provided just as an example, and you can modify and extend it according to your own needs using the tools provided by the [Dataset Insights framework](https://datasetinsights.readthedocs.io/en/latest/).
+Once the run execution is complete, you can use Unity's [Datasets Insights](https://github.com/Unity-Technologies/datasetinsights) framework to download your dataset and analyze it. This is covered in the Unity Simulation section of the [Dataset Insights](DatasetInsights.md) guide.
 
 The next step in this workflow, which is out of the scope of this tutorial, is to train an object-detection model using our synthetic dataset. It is important to note that the 1000 large dataset we generated here is probably not sufficiently large for training most models. We chose this number here so that the Unity Simulation run would finish quickly, allowing us to move on to learning how to analyze the statistics of the dataset. In order to generate data for training, we recommend a minimum dataset size of around 50,000 captures with a large degree of randomization. 
 
