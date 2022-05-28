@@ -203,7 +203,7 @@ namespace UnityEngine.Perception.GroundTruth
                     throw new InvalidOperationException("Raw image data doesn't need encoding");
                 case ImageEncodingFormat.Jpg:
                     output = ImageConversion.EncodeNativeArrayToJPG(
-                        data, format, (uint)width, (uint)height, quality: 100);
+                        data, format, (uint)width, (uint)height, quality: 85);
                     break;
                 case ImageEncodingFormat.Png:
                     output = ImageConversion.EncodeNativeArrayToPNG(

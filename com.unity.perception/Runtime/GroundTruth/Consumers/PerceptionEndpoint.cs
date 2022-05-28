@@ -306,7 +306,7 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                         sensor = sensorJToken,
                         ego = JToken.FromObject(defaultEgo, Serializer),
                         filename = path,
-                        format = "PNG",
+                        format = "JPEG",
                         annotations = annotations
                     };
 
@@ -369,7 +369,7 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
 
         internal string WriteOutImageFile(int frame, RgbSensor rgb)
         {
-            var path = PathUtils.CombineUniversal(GetProductPath(rgb), $"rgb_{frame}.png");
+            var path = PathUtils.CombineUniversal(GetProductPath(rgb), $"rgb_{frame}.jpg");
             PathUtils.WriteAndReportImageFile(path, rgb.buffer);
             RegisterFile(path);
             return path;
