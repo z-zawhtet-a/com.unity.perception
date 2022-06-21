@@ -276,6 +276,8 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         {
             var seqId = GenerateSequenceId(frame);
 
+            Debug.Log("Frame generated inside old consumer.");
+
             var captureIdMap = new Dictionary<(int step, string sensorId), string>();
             foreach (var sensor in frame.sensors)
             {
@@ -576,135 +578,135 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         // ReSharper enable InconsistentNaming
     }
 
-    class PerceptionResolver : DefaultContractResolver
-    {
-        protected override JsonObjectContract CreateObjectContract(Type objectType)
-        {
-            var contract = base.CreateObjectContract(objectType);
-            if (objectType == typeof(Vector3) ||
-                objectType == typeof(Vector2) ||
-                objectType == typeof(Color) ||
-                objectType == typeof(Quaternion))
-            {
-                contract.Converter = PerceptionConverter.Instance;
-            }
+    //class PerceptionResolver : DefaultContractResolver
+    //{
+    //    protected override JsonObjectContract CreateObjectContract(Type objectType)
+    //    {
+    //        var contract = base.CreateObjectContract(objectType);
+    //        if (objectType == typeof(Vector3) ||
+    //            objectType == typeof(Vector2) ||
+    //            objectType == typeof(Color) ||
+    //            objectType == typeof(Quaternion))
+    //        {
+    //            contract.Converter = PerceptionConverter.Instance;
+    //        }
 
-            return contract;
-        }
-    }
+    //        return contract;
+    //    }
+    //}
 
-    class PerceptionConverter : JsonConverter
-    {
-        public static PerceptionConverter Instance = new PerceptionConverter();
+    //class PerceptionConverter : JsonConverter
+    //{
+    //    public static PerceptionConverter Instance = new PerceptionConverter();
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            switch (value)
-            {
-                case int _:
-                case uint _:
-                case float _:
-                case double _:
-                case string _:
-                    writer.WriteValue(value);
-                    break;
-                case Vector3 v3:
-                {
-                    writer.WriteStartArray();
-                    writer.WriteValue(v3.x);
-                    writer.WriteValue(v3.y);
-                    writer.WriteValue(v3.z);
-                    writer.WriteEndArray();
-                    break;
-                }
-                case Vector2 v2:
-                {
-                    writer.WriteStartArray();
-                    writer.WriteValue(v2.x);
-                    writer.WriteValue(v2.y);
-                    writer.WriteEndArray();
-                    break;
-                }
-                case Color32 rgba:
-                {
-                    writer.WriteStartObject();
-                    writer.WritePropertyName("r");
-                    writer.WriteValue(rgba.r);
-                    writer.WritePropertyName("g");
-                    writer.WriteValue(rgba.g);
-                    writer.WritePropertyName("b");
-                    writer.WriteValue(rgba.b);
-                    writer.WritePropertyName("a");
-                    writer.WriteValue(rgba.a);
-                    writer.WriteEndObject();
-                    break;
-                }
-                case Color rgba:
-                {
-                    writer.WriteStartObject();
-                    writer.WritePropertyName("r");
-                    writer.WriteValue(rgba.r);
-                    writer.WritePropertyName("g");
-                    writer.WriteValue(rgba.g);
-                    writer.WritePropertyName("b");
-                    writer.WriteValue(rgba.b);
-                    writer.WritePropertyName("a");
-                    writer.WriteValue(rgba.a);
-                    writer.WriteEndObject();
-                    break;
-                }
-                case Quaternion quaternion:
-                {
-                    writer.WriteStartArray();
-                    writer.WriteValue(quaternion.x);
-                    writer.WriteValue(quaternion.y);
-                    writer.WriteValue(quaternion.z);
-                    writer.WriteValue(quaternion.w);
-                    writer.WriteEndArray();
-                    break;
-                }
-                case float3x3 f3x3:
-                    writer.WriteStartArray();
-                    writer.WriteStartArray();
-                    writer.WriteValue(f3x3.c0[0]);
-                    writer.WriteValue(f3x3.c0[1]);
-                    writer.WriteValue(f3x3.c0[2]);
-                    writer.WriteEndArray();
-                    writer.WriteStartArray();
-                    writer.WriteValue(f3x3.c1[0]);
-                    writer.WriteValue(f3x3.c1[1]);
-                    writer.WriteValue(f3x3.c1[2]);
-                    writer.WriteEndArray();
-                    writer.WriteStartArray();
-                    writer.WriteValue(f3x3.c2[0]);
-                    writer.WriteValue(f3x3.c2[1]);
-                    writer.WriteValue(f3x3.c2[2]);
-                    writer.WriteEndArray();
-                    writer.WriteEndArray();
-                    break;
-            }
-        }
+    //    public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+    //    {
+    //        switch (value)
+    //        {
+    //            case int _:
+    //            case uint _:
+    //            case float _:
+    //            case double _:
+    //            case string _:
+    //                writer.WriteValue(value);
+    //                break;
+    //            case Vector3 v3:
+    //            {
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(v3.x);
+    //                writer.WriteValue(v3.y);
+    //                writer.WriteValue(v3.z);
+    //                writer.WriteEndArray();
+    //                break;
+    //            }
+    //            case Vector2 v2:
+    //            {
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(v2.x);
+    //                writer.WriteValue(v2.y);
+    //                writer.WriteEndArray();
+    //                break;
+    //            }
+    //            case Color32 rgba:
+    //            {
+    //                writer.WriteStartObject();
+    //                writer.WritePropertyName("r");
+    //                writer.WriteValue(rgba.r);
+    //                writer.WritePropertyName("g");
+    //                writer.WriteValue(rgba.g);
+    //                writer.WritePropertyName("b");
+    //                writer.WriteValue(rgba.b);
+    //                writer.WritePropertyName("a");
+    //                writer.WriteValue(rgba.a);
+    //                writer.WriteEndObject();
+    //                break;
+    //            }
+    //            case Color rgba:
+    //            {
+    //                writer.WriteStartObject();
+    //                writer.WritePropertyName("r");
+    //                writer.WriteValue(rgba.r);
+    //                writer.WritePropertyName("g");
+    //                writer.WriteValue(rgba.g);
+    //                writer.WritePropertyName("b");
+    //                writer.WriteValue(rgba.b);
+    //                writer.WritePropertyName("a");
+    //                writer.WriteValue(rgba.a);
+    //                writer.WriteEndObject();
+    //                break;
+    //            }
+    //            case Quaternion quaternion:
+    //            {
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(quaternion.x);
+    //                writer.WriteValue(quaternion.y);
+    //                writer.WriteValue(quaternion.z);
+    //                writer.WriteValue(quaternion.w);
+    //                writer.WriteEndArray();
+    //                break;
+    //            }
+    //            case float3x3 f3x3:
+    //                writer.WriteStartArray();
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(f3x3.c0[0]);
+    //                writer.WriteValue(f3x3.c0[1]);
+    //                writer.WriteValue(f3x3.c0[2]);
+    //                writer.WriteEndArray();
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(f3x3.c1[0]);
+    //                writer.WriteValue(f3x3.c1[1]);
+    //                writer.WriteValue(f3x3.c1[2]);
+    //                writer.WriteEndArray();
+    //                writer.WriteStartArray();
+    //                writer.WriteValue(f3x3.c2[0]);
+    //                writer.WriteValue(f3x3.c2[1]);
+    //                writer.WriteValue(f3x3.c2[2]);
+    //                writer.WriteEndArray();
+    //                writer.WriteEndArray();
+    //                break;
+    //        }
+    //    }
 
-        /// <inheritdoc/>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            return null;
-        }
+    //    /// <inheritdoc/>
+    //    public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+    //    {
+    //        return null;
+    //    }
 
-        /// <inheritdoc/>
-        public override bool CanConvert(Type objectType)
-        {
-            if (objectType == typeof(int)) return true;
-            if (objectType == typeof(uint)) return true;
-            if (objectType == typeof(double)) return true;
-            if (objectType == typeof(float)) return true;
-            if (objectType == typeof(string)) return true;
-            if (objectType == typeof(Vector3)) return true;
-            if (objectType == typeof(Vector2)) return true;
-            if (objectType == typeof(Quaternion)) return true;
-            if (objectType == typeof(float3x3)) return true;
-            if (objectType == typeof(Color)) return true;
-            return objectType == typeof(Color32);
-        }
-    }
+    //    /// <inheritdoc/>
+    //    public override bool CanConvert(Type objectType)
+    //    {
+    //        if (objectType == typeof(int)) return true;
+    //        if (objectType == typeof(uint)) return true;
+    //        if (objectType == typeof(double)) return true;
+    //        if (objectType == typeof(float)) return true;
+    //        if (objectType == typeof(string)) return true;
+    //        if (objectType == typeof(Vector3)) return true;
+    //        if (objectType == typeof(Vector2)) return true;
+    //        if (objectType == typeof(Quaternion)) return true;
+    //        if (objectType == typeof(float3x3)) return true;
+    //        if (objectType == typeof(Color)) return true;
+    //        return objectType == typeof(Color32);
+    //    }
+    //}
 }

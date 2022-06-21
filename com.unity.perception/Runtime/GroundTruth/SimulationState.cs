@@ -9,7 +9,7 @@ using UnityEngine.Perception.GroundTruth.DataModel;
 
 namespace UnityEngine.Perception.GroundTruth
 {
-    class SimulationState
+    public class SimulationState
     {
         public const string lastEndpointTypeKey = "LastEndpointTypeKey";
         public const string lastFileSystemPathKey = "LastFileSystemPathKey";
@@ -1110,6 +1110,7 @@ namespace UnityEngine.Perception.GroundTruth
                 }
 
                 consumerEndpoint.FrameGenerated(converted);
+
             }
         }
     }

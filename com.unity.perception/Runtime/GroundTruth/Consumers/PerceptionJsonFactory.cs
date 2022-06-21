@@ -31,7 +31,39 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
             return null;
         }
 
+        public static JToken Convert(PerceptionZMQEndpoint consumer, string id, AnnotationDefinition annotationDefinition)
+        {
+            switch (annotationDefinition)
+            {
+                case BoundingBoxDefinition def:
+                    return JToken.FromObject(LabelConfigurationAnnotationDefinition.Convert(def, "json", def.spec), consumer.Serializer);
+                case BoundingBox3DDefinition def:
+                    return JToken.FromObject(LabelConfigurationAnnotationDefinition.Convert(def, "json", def.spec), consumer.Serializer);
+                case InstanceSegmentationDefinition def:
+                    return JToken.FromObject(LabelConfigurationAnnotationDefinition.Convert(def, "PNG", def.spec), consumer.Serializer);
+                case SemanticSegmentationDefinition def:
+                    return JToken.FromObject(PerceptionSemanticSegmentationAnnotationDefinition.Convert(def, "PNG"), consumer.Serializer);
+                case KeypointAnnotationDefinition kp:
+                    return JToken.FromObject(PerceptionKeypointAnnotationDefinition.Convert(consumer, kp), consumer.Serializer);
+            }
+
+            return null;
+        }
+
         public static JToken Convert(PerceptionEndpoint consumer, string id, MetricDefinition def)
+        {
+            switch (def)
+            {
+                case ObjectCountMetricDefinition casted:
+                    return JToken.FromObject(LabelConfigMetricDefinition.Convert(id, def, casted.spec), consumer.Serializer);
+                case RenderedObjectInfoMetricDefinition casted:
+                    return JToken.FromObject(LabelConfigMetricDefinition.Convert(id, def, casted.spec), consumer.Serializer);
+                default:
+                    return JToken.FromObject(GenericMetricDefinition.Convert(id, def), consumer.Serializer);
+            }
+        }
+
+        public static JToken Convert(PerceptionZMQEndpoint consumer, string id, MetricDefinition def)
         {
             switch (def)
             {
@@ -70,6 +102,13 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
             return JToken.FromObject(convertedSensor, consumer.Serializer);
         }
 
+        public static JToken Convert(PerceptionZMQEndpoint consumer, Frame frame, RgbSensor sensor)
+        {
+            //var path = consumer.WriteOutImageFile(frame.frame, sensor);
+            var convertedSensor = PerceptionRgbSensor.Convert(sensor);
+            return JToken.FromObject(convertedSensor, consumer.Serializer);
+        }
+
         public static JToken Convert(PerceptionEndpoint consumer, Frame frame, string labelerId, string defId, Annotation annotation)
         {
             switch (annotation)
@@ -99,6 +138,38 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                     var tmp = JToken.FromObject(annotation, consumer.Serializer);
                     return tmp;
                 }
+            }
+        }
+
+        public static JToken Convert(PerceptionZMQEndpoint consumer, Frame frame, string labelerId, string defId, Annotation annotation)
+        {
+            switch (annotation)
+            {
+                case InstanceSegmentationAnnotation i:
+                    {
+                        return JToken.FromObject(PerceptionInstanceSegmentationValue.Convert(consumer, frame.frame, i), consumer.Serializer);
+                    }
+                case BoundingBoxAnnotation b:
+                    {
+                        return JToken.FromObject(PerceptionBoundingBoxAnnotationValue.Convert(consumer, labelerId, defId, b), consumer.Serializer);
+                    }
+                case BoundingBox3DAnnotation b:
+                    {
+                        return JToken.FromObject(PerceptionBounding3dBoxAnnotationValue.Convert(consumer, labelerId, defId, b), consumer.Serializer);
+                    }
+                case SemanticSegmentationAnnotation s:
+                    {
+                        return JToken.FromObject(PerceptionSemanticSegmentationValue.Convert(consumer, frame.frame, s), consumer.Serializer);
+                    }
+                case KeypointAnnotation kp:
+                    {
+                        return JToken.FromObject(PerceptionKeyPointValue.Convert(consumer, kp), consumer.Serializer);
+                    }
+                default:
+                    {
+                        var tmp = JToken.FromObject(annotation, consumer.Serializer);
+                        return tmp;
+                    }
             }
         }
     }
@@ -242,6 +313,11 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         {
             return new PerceptionKeyPointValue(kp);
         }
+
+        public static PerceptionKeyPointValue Convert(PerceptionZMQEndpoint consumer, KeypointAnnotation kp)
+        {
+            return new PerceptionKeyPointValue(kp);
+        }
     }
 
     [Serializable]
@@ -266,6 +342,16 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                 id = annotation.id,
                 annotation_definition = annotation.annotationId,
                 filename = consumer.RemoveDatasetPathPrefix(CreateFile(consumer, frame, annotation)),
+            };
+        }
+
+        public static PerceptionSemanticSegmentationValue Convert(PerceptionZMQEndpoint consumer, int frame, SemanticSegmentationAnnotation annotation)
+        {
+            return new PerceptionSemanticSegmentationValue
+            {
+                id = annotation.id,
+                annotation_definition = annotation.annotationId,
+                filename = "None"
             };
         }
     }
@@ -339,6 +425,14 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
             values = annotation.instances.Select(Entry.Convert).ToList();
         }
 
+        PerceptionInstanceSegmentationValue(PerceptionZMQEndpoint consumer, int frame, InstanceSegmentationAnnotation annotation)
+        {
+            id = annotation.id;
+            annotation_definition = annotation.annotationId;
+            filename = "None";
+            values = annotation.instances.Select(Entry.Convert).ToList();
+        }
+
         static string CreateFile(PerceptionEndpoint consumer, int frame, InstanceSegmentationAnnotation annotation)
         {
             var path = PathUtils.CombineUniversal(consumer.GetProductPath(annotation), $"Instance_{frame}.png");
@@ -348,6 +442,11 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         }
 
         public static PerceptionInstanceSegmentationValue Convert(PerceptionEndpoint consumer, int frame, InstanceSegmentationAnnotation annotation)
+        {
+            return new PerceptionInstanceSegmentationValue(consumer, frame, annotation);
+        }
+
+        public static PerceptionInstanceSegmentationValue Convert(PerceptionZMQEndpoint consumer, int frame, InstanceSegmentationAnnotation annotation)
         {
             return new PerceptionInstanceSegmentationValue(consumer, frame, annotation);
         }
@@ -430,6 +529,11 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         }
 
         public static PerceptionBounding3dBoxAnnotationValue Convert(PerceptionEndpoint consumer, string labelerId, string defId, BoundingBox3DAnnotation annotation)
+        {
+            return new PerceptionBounding3dBoxAnnotationValue(labelerId, defId, annotation);
+        }
+
+        public static PerceptionBounding3dBoxAnnotationValue Convert(PerceptionZMQEndpoint consumer, string labelerId, string defId, BoundingBox3DAnnotation annotation)
         {
             return new PerceptionBounding3dBoxAnnotationValue(labelerId, defId, annotation);
         }
@@ -555,6 +659,21 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                 }
             };
         }
+
+        public static PerceptionKeypointAnnotationDefinition Convert(PerceptionZMQEndpoint consumer, KeypointAnnotationDefinition def)
+        {
+            return new PerceptionKeypointAnnotationDefinition
+            {
+                id = def.id,
+                name = PerceptionJsonFactory.GetNameFromAnnotationDefinition(def),
+                description = def.description,
+                format = "json",
+                spec = new List<KeypointJson>()
+                {
+                    KeypointJson.Convert(def.template)
+                }
+            };
+        }
     }
 
     [Serializable]
@@ -591,6 +710,16 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         public List<Entry> values;
 
         public static PerceptionBoundingBoxAnnotationValue Convert(PerceptionEndpoint consumer, string labelerId, string defId, BoundingBoxAnnotation annotation)
+        {
+            return new PerceptionBoundingBoxAnnotationValue
+            {
+                id = labelerId,
+                annotation_definition = defId,
+                values = annotation.boxes.Select(Entry.Convert).ToList()
+            };
+        }
+
+        public static PerceptionBoundingBoxAnnotationValue Convert(PerceptionZMQEndpoint consumer, string labelerId, string defId, BoundingBoxAnnotation annotation)
         {
             return new PerceptionBoundingBoxAnnotationValue
             {

@@ -17,6 +17,7 @@ namespace UnityEngine.Perception.Settings
         static string s_GameObjectName = "_PerceptionSettings";
         static PerceptionSettings s_Instance;
         static bool s_HideInHierarchy = true;
+
 #if !UNITY_EDITOR
         (bool, string) GetPathFromCommandLine()
         {
@@ -189,5 +190,6 @@ namespace UnityEngine.Perception.Settings
 
         [SerializeReference][ConsumerEndpointDrawer(typeof(IConsumerEndpoint))]
         public IConsumerEndpoint endpoint = new PerceptionEndpoint();
+
     }
 }

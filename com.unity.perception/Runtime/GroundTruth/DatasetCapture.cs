@@ -26,7 +26,7 @@ namespace UnityEngine.Perception.GroundTruth
             };
         }
 
-        internal static SimulationState currentSimulation => m_ActiveSimulation ?? (m_ActiveSimulation = CreateSimulationData());
+        public static SimulationState currentSimulation => m_ActiveSimulation ?? (m_ActiveSimulation = CreateSimulationData());
 
         /// <summary>
         /// The json metadata schema version the DatasetCapture's output conforms to.
@@ -202,7 +202,7 @@ namespace UnityEngine.Perception.GroundTruth
         /// <summary>
         /// Retrieve a handle to the active endpoint.
         /// </summary>
-        public static IConsumerEndpoint activateEndpoint => m_ActiveSimulation.consumerEndpoint;
+        public static IConsumerEndpoint activeEndpoint => m_ActiveSimulation.consumerEndpoint;
 
         /// <summary>
         /// Sets the current output path for <see cref="IFileSystemEndpoint"/> endpoints. This will set the path for the next simulation, it will
