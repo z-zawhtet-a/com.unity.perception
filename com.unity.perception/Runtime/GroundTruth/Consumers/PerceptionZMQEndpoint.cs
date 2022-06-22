@@ -24,7 +24,6 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         internal Dictionary<string, AnnotationDefinition> registeredAnnotations = new Dictionary<string, AnnotationDefinition>();
         Dictionary<string, MetricDefinition> m_RegisteredMetrics = new Dictionary<string, MetricDefinition>();
         List<PerceptionCapture> m_CurrentCaptures = new List<PerceptionCapture>();
-        List<byte[]> m_CurrentPayloads= new List<byte[]>();
         internal Dictionary<string, Guid> idToGuidMap = new Dictionary<string, Guid>();
         Guid m_SequenceGuidStart = Guid.NewGuid();
 
@@ -40,7 +39,7 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         /// <summary>
         /// ZMQ Requests Queue
         /// </summary>
-        public Queue<(string, Action<List<byte[]>>)> payloadsRequests = new Queue<(string, Action<List<byte[]>>)>();
+        public Queue<(string, Action<string>)> payloadsRequests = new Queue<(string, Action<string>)>();
 
         ///// <summary>
         ///// Callback with serialized JSON string for perception metrics with
@@ -186,11 +185,11 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                         sensor = sensorJToken,
                         ego = JToken.FromObject(defaultEgo, Serializer),
                         filename = path,
+                        rgbImg = Convert.ToBase64String(rgb.buffer),
                         format = "JPEG",
                         annotations = annotations
                     };
 
-                    m_CurrentPayloads.Add(rgb.buffer);
                     m_CurrentCaptures.Add(capture);
                 }
             }
@@ -229,13 +228,11 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
 
         void WriteCaptures(bool flush = false)
         {
-            if (flush || (m_CurrentCaptures.Count >= capturesPerBatch
-                && m_CurrentPayloads.Count >= capturesPerBatch))
+            if (flush || (m_CurrentCaptures.Count >= capturesPerBatch))
             {
                 m_CurrentCaptureIndex++;
                 WriteCaptureBatch(m_CurrentCaptures);
                 m_CurrentCaptures.Clear();
-                m_CurrentPayloads.Clear();
             }
         }
 
@@ -370,18 +367,7 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
                 captures = captures
             };
 
-            var jt = JToken.FromObject(top, Serializer);
-
-            var stringWriter = new StringWriter(new StringBuilder(256), CultureInfo.InvariantCulture);
-            using (var jsonTextWriter = new JsonTextWriter(stringWriter))
-            {
-                jsonTextWriter.Formatting = Formatting.Indented;
-                jt.WriteTo(jsonTextWriter);
-            }
-
-            m_CurrentPayloads.Add(Encoding.Unicode.GetBytes(stringWriter.ToString()));
-
-            WriteAndReportJson(m_CurrentPayloads, StoreType.captures);
+            WriteAndReportJson(JToken.FromObject(top, Serializer), StoreType.captures);
 
         }
 
@@ -391,15 +377,22 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
         /// <param name="json">The json information to pass out.</param>
         /// <param name="storeType">The type of json string to pass out.</param>
         /// <returns>Did it work correctly</returns>
-        void WriteAndReportJson(List<byte[]> payloads, StoreType storeType)
+        void WriteAndReportJson(JToken payloads, StoreType storeType)
         {
             switch (storeType) {
                 case StoreType.captures:
                     if (payloadsRequests.Count > 0)
                     {
+                        var stringWriter = new StringWriter(new StringBuilder(2048), CultureInfo.InvariantCulture);
+                        using (var jsonTextWriter = new JsonTextWriter(stringWriter))
+                        {
+                            jsonTextWriter.Formatting = Formatting.None;
+                            payloads.WriteTo(jsonTextWriter);
+                        }
+
                         var (request, provideResult) = payloadsRequests.Dequeue();
 
-                        provideResult(payloads);
+                        provideResult(stringWriter.ToString());
                     }
                     break;
                 case StoreType.metrics:
@@ -439,6 +432,7 @@ namespace UnityEngine.Perception.GroundTruth.Consumers
             public JToken ego;
             public string filename;
             public string format;
+            public string rgbImg;
             public JArray annotations;
         }
 
